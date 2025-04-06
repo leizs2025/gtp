@@ -1,238 +1,137 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>手机快递查询</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>快递查询系统</title>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
-      background-color: #f5f5f5;
-      padding: 15px;
-      min-height: 100vh;
+      font-family: sans-serif;
+      padding: 1em;
+      max-width: 600px;
+      margin: auto;
     }
-
-    h1 {
-      text-align: center;
-      color: #2c3e50;
-      font-size: 1.8rem;
-      margin-bottom: 1.5rem;
-      padding: 10px 0;
-    }
-
-    .form-section {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .input-group {
-      margin-bottom: 1.2rem;
-    }
-
-    .input-label {
+    label {
       display: block;
-      color: #666;
-      font-size: 0.95rem;
-      margin-bottom: 8px;
+      margin-top: 1em;
     }
-
-    input[type='text'],
-    input[type='number'] {
+    input, button {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 1rem;
-      background-color: #f9f9f9;
+      padding: 0.6em;
+      margin-top: 0.4em;
+      font-size: 1em;
     }
-
-    input:focus {
-      outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-    }
-
     button {
-      width: 100%;
-      padding: 14px;
-      background: #3498db;
+      background-color: #007BFF;
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 1.1rem;
       cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 10px;
     }
-
     button:hover {
-      background: #2980b9;
+      background-color: #0056b3;
     }
-
-    .data-card {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-label {
-      color: #888;
-      font-size: 0.85rem;
-      margin-bottom: 4px;
-    }
-
     #result {
-      padding: 15px;
+      margin-top: 1em;
+      padding: 1em;
+      background: #f0f0f0;
       border-radius: 8px;
-      margin-top: 15px;
-      background: white;
-    }
-
-    @media (max-width: 480px) {
-      input,
-      button {
-        font-size: 16px;
-      }
-
-      .form-section {
-        padding: 10px;
-      }
     }
   </style>
 </head>
 <body>
-  <h1>快递查询系统</h1>
 
-  <div class="form-section">
-    <div class="input-group">
-      <label class="input-label">快递单号</label>
-      <input type="text" id="trackingNumber" placeholder="输入快递单号" />
-    </div>
-    <button type="button" onclick="queryData()">立即查询</button>
-  </div>
+  <h2>📦 快递查询系统</h2>
 
-  <div class="form-section">
-    <div class="data-card">
-      <div class="data-label">快递公司</div>
-      <div id="companyData">-</div>
-    </div>
-    <div class="data-card">
-      <div class="data-label">货物名称</div>
-      <div id="productData">-</div>
-    </div>
-    <div class="data-card">
-      <div class="data-label">客户名称</div>
-      <div id="customerData">-</div>
-    </div>
-    <div class="data-card">
-      <div class="data-label">已知运费</div>
-      <div id="knownPrice">-</div>
-    </div>
-  </div>
-
-  <div class="form-section">
-    <div class="input-group">
-      <label class="input-label">运费金额</label>
-      <input type="number" id="enteredPrice" placeholder="输入运费金额" />
-    </div>
-    <button type="button" onclick="submitForm()">确认提交</button>
-  </div>
+  <form id="query-form">
+    <label>
+      快递单号：
+      <input type="text" id="trackingNumber" required />
+    </label>
+    <button type="submit">查询快递</button>
+  </form>
 
   <div id="result"></div>
 
+  <form id="submit-form" style="display:none;">
+    <label>
+      运费金额（元）：
+      <input type="number" id="amount" min="0" step="0.01" required />
+    </label>
+    <button type="submit">提交信息</button>
+  </form>
+
   <script>
-     const GAS_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev'; // 你部署的 Cloudflare Worker 地址
+    const queryForm = document.getElementById('query-form');
+    const submitForm = document.getElementById('submit-form');
+    const resultBox = document.getElementById('result');
 
-function queryData() {
-    var trackingNumber = document.getElementById('trackingNumber').value;
+    let currentTrackingNumber = "";
 
-    fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            action: 'query',
-            trackingNumber: trackingNumber
-        }),
-    })
-    .then(response => response.text())  // 先拿纯文本
-    .then(text => {
-        try {
-            const data = JSON.parse(text); // 尝试转成 JSON
-            updateResult(data, trackingNumber);
-        } catch (err) {
-            console.error('返回非 JSON:', text); // 输出 HTML 或错误页面
-            document.getElementById('result').textContent = '服务器返回异常内容，请检查 Cloudflare Worker 或 Google Apps Script 是否出错。';
-        }
-    })
-    .catch(error => {
-        console.error('查询错误:', error);
-        document.getElementById('result').textContent = '查询出错，请稍后重试。';
-    });
-}
+    queryForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const trackingNumber = document.getElementById("trackingNumber").value.trim();
 
+      if (!trackingNumber) return;
 
-    function submitForm() {
-        var trackingNumber = document.getElementById('trackingNumber').value;
-        var company = document.getElementById('companyData').textContent;
-        var product = document.getElementById('productData').textContent;
-        var customer = document.getElementById('customerData').textContent;
-        var enteredPrice = document.getElementById('enteredPrice').value;
+      resultBox.innerHTML = "正在查询中...";
+      submitForm.style.display = "none";
 
-        fetch(GAS_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'submit', // ✅ 必填字段
-                trackingNumber: trackingNumber,
-                company: company,
-                product: product,
-                customer: customer,
-                enteredPrice: enteredPrice
-            }),
-        })
-        .then(response => response.json())
-        .then(data => finalResult(data))
-        .catch(error => {
-            console.error('提交错误:', error);
-            document.getElementById('result').textContent = '提交失败，请稍后重试。';
-        });
-    }
-
-    function updateResult(result, trackingNumber) {
-        const updateField = (id, value) => {
-            document.getElementById(id).textContent = value || '-';
+      try {
+        // ⚠️ 这里你可以替换为实际查询接口，下面是假数据
+        // const res = await fetch(`https://your-api.com/track/${trackingNumber}`);
+        // const data = await res.json();
+        const data = {
+          status: "运输中",
+          company: "圆通快递",
+          location: "广东深圳",
+          lastUpdate: new Date().toLocaleString()
         };
 
-        if (result && typeof result === 'object') {
-            updateField('companyData', result.company);
-            updateField('productData', result.product);
-            updateField('customerData', result.customer);
-            updateField('knownPrice', result.price);
-            document.getElementById('result').textContent = '数据已提取，请填写运费并提交。';
-        } else {
-            document.getElementById('result').textContent = result || '查询失败';
-            if (result === '未找到该快递单号！') {
-                ['companyData', 'productData', 'customerData', 'knownPrice'].forEach(id => {
-                    updateField(id, '');
-                });
-            }
-        }
-    }
+        currentTrackingNumber = trackingNumber;
 
-    function finalResult(result) {
-        document.getElementById('result').innerHTML = result;
-    }
+        resultBox.innerHTML = `
+          <strong>查询结果：</strong><br/>
+          快递公司：${data.company}<br/>
+          当前状态：${data.status}<br/>
+          当前位置：${data.location}<br/>
+          更新时间：${data.lastUpdate}
+        `;
+
+        submitForm.style.display = "block";
+
+      } catch (err) {
+        resultBox.innerHTML = "❌ 查询失败：" + err.message;
+      }
+    });
+
+    submitForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const amount = document.getElementById("amount").value.trim();
+
+      if (!currentTrackingNumber || !amount) return;
+
+      const payload = {
+        trackingNumber: currentTrackingNumber,
+        amount
+      };
+
+      try {
+        const res = await fetch("https://your-cloudflare-worker.workers.dev/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error("提交失败");
+
+        const data = await res.json();
+        resultBox.innerHTML += `<br/><br/>✅ 已提交运费：¥${amount}`;
+        submitForm.style.display = "none";
+      } catch (err) {
+        resultBox.innerHTML += `<br/><br/>❌ 提交失败：${err.message}`;
+      }
+    });
   </script>
+
 </body>
 </html>
