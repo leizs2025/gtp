@@ -2,116 +2,220 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>快递查询系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>手机快递查询</title>
     <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             background-color: #f5f5f5;
             padding: 15px;
-            font-family: Arial, sans-serif;
+            min-height: 100vh;
         }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            padding: 10px 0;
+        }
+
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
         .input-group {
-            margin-bottom: 10px;
+            margin-bottom: 1.2rem;
         }
-        input[type="text"], input[type="number"] {
+
+        .input-label {
+            display: block;
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"], 
+        input[type="number"] {
             width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #f9f9f9;
         }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+        }
+
         button {
-            padding: 10px;
-            background-color: #3498db;
+            width: 100%;
+            padding: 14px;
+            background: #3498db;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            font-size: 1.1rem;
             cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
         }
+
         button:hover {
-            background-color: #2980b9;
+            background: #2980b9;
         }
-        .result {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #fff;
-            border-radius: 5px;
+
+        .data-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 0.95rem;
+        }
+
+        .data-label {
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        #result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            background: white;
+        }
+
+        /* 响应式布局 */
+        @media (max-width: 480px) {
+            input, button {
+                font-size: 16px; /* 防止自动缩放 */
+            }
+            .form-section {
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
+    <h1>快递查询系统</h1>
 
-<h1>快递查询系统</h1>
+    <!-- 查询区 -->
+    <div class="form-section">
+        <div class="input-group">
+            <label class="input-label">快递单号</label>
+            <input type="text" id="trackingNumber" placeholder="输入快递单号">
+        </div>
+        <button type="button" onclick="queryData()">立即查询</button>
+    </div>
 
-<div class="input-group">
-    <label for="trackingNumber">快递单号</label>
-    <input type="text" id="trackingNumber" placeholder="输入快递单号">
-    <button onclick="queryData()">立即查询</button>
-</div>
+    <!-- 信息展示区 -->
+    <div class="form-section">
+        <div class="data-card">
+            <div class="data-label">快递公司</div>
+            <div id="companyData">-</div>
+        </div>
+        <div class="data-card">
+            <div class="data-label">货物名称</div>
+            <div id="productData">-</div>
+        </div>
+        <div class="data-card">
+            <div class="data-label">客户名称</div>
+            <div id="customerData">-</div>
+        </div>
+        <div class="data-card">
+            <div class="data-label">已知运费</div>
+            <div id="knownPrice">-</div>
+        </div>
+    </div>
 
-<div class="result" id="queryResult" style="display: none;">
-    <h2>查询结果</h2>
-    <p><strong>快递公司：</strong><span id="companyData">-</span></p>
-    <p><strong>货物名称：</strong><span id="productData">-</span></p>
-    <p><strong>客户名称：</strong><span id="customerData">-</span></p>
-    <p><strong>已知运费：</strong><span id="knownPrice">-</span></p>
-</div>
+    <!-- 运费提交区 -->
+    <div class="form-section">
+        <div class="input-group">
+            <label class="input-label">运费金额</label>
+            <input type="number" id="enteredPrice" placeholder="输入运费金额">
+        </div>
+        <button type="button" onclick="submitForm()">确认提交</button>
+    </div>
 
-<div class="input-group">
-    <label for="enteredPrice">运费金额</label>
-    <input type="number" id="enteredPrice" placeholder="输入运费金额">
-    <button onclick="submitForm()">确认提交</button>
-</div>
+    <div id="result"></div>
 
-<p id="resultMessage"></p>
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNEKITLWiZwc-uK6qLYqkpPbKLjEHLrI52TCWWU5j3clCp9E-UFq0X-6Ix1YBEBjT_Kg/exec'; // 替换为你的 Google Apps Script URL
 
-<script>
-    function queryData() {
-        var trackingNumber = document.getElementById('trackingNumber').value.trim();
-        if (trackingNumber === '') {
-            alert('请输入快递单号！');
-            return;
+        function queryData() {
+            var trackingNumber = document.getElementById('trackingNumber').value;
+
+            fetch(GAS_URL + '?action=query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trackingNumber: trackingNumber }),
+            })
+            .then(response => response.json())
+            .then(data => updateResult(data, trackingNumber))
+            .catch(error => console.error('Error:', error));
         }
 
-        google.script.run.withSuccessHandler(updateResult).getData(trackingNumber);
-    }
+        function submitForm() {
+            var trackingNumber = document.getElementById('trackingNumber').value;
+            var company = document.getElementById('companyData').textContent;
+            var product = document.getElementById('productData').textContent;
+            var customer = document.getElementById('customerData').textContent;
+            var enteredPrice = document.getElementById('enteredPrice').value;
 
-    function submitForm() {
-        var trackingNumber = document.getElementById('trackingNumber').value.trim();
-        var company = document.getElementById('companyData').textContent;
-        var product = document.getElementById('productData').textContent;
-        var customer = document.getElementById('customerData').textContent;
-        var enteredPrice = document.getElementById('enteredPrice').value;
-
-        if (trackingNumber === '' || company === '-' || product === '-' || customer === '-' || enteredPrice === '') {
-            alert('请查询到快递信息后再提交运费！');
-            return;
+            fetch(GAS_URL + '?action=submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trackingNumber: trackingNumber,
+                    company: company,
+                    product: product,
+                    customer: customer,
+                    enteredPrice: enteredPrice
+                }),
+            })
+            .then(response => response.json())
+            .then(data => finalResult(data))
+            .catch(error => console.error('Error:', error));
         }
 
-        google.script.run.withSuccessHandler(finalResult).writeData(trackingNumber, company, product, customer, enteredPrice);
-    }
+        function updateResult(result, trackingNumber) {
+            const updateField = (id, value) => {
+                document.getElementById(id).textContent = value || '-';
+            };
 
-    function updateResult(result) {
-        if (typeof result === 'string') {
-            document.getElementById('resultMessage').innerText = result;
-            document.getElementById('queryResult').style.display = 'none';
-            return;
+            if (result && typeof result === 'object') {
+                updateField('companyData', result.company);
+                updateField('productData', result.product);
+                updateField('customerData', result.customer);
+                updateField('knownPrice', result.price);
+                document.getElementById('result').textContent = '数据已提取，请填写运费并提交。';
+            } else {
+                document.getElementById('result').textContent = result || '查询失败';
+                if (result === '未找到该快递单号！') {
+                    ['companyData', 'productData', 'customerData', 'knownPrice'].forEach(id => {
+                        updateField(id, '');
+                    });
+                }
+            }
         }
 
-        document.getElementById('companyData').innerText = result.company || '-';
-        document.getElementById('productData').innerText = result.product || '-';
-        document.getElementById('customerData').innerText = result.customer || '-';
-        document.getElementById('knownPrice').innerText = result.price || '-';
-
-        document.getElementById('resultMessage').innerText = '数据已提取，请填写运费并提交。';
-        document.getElementById('queryResult').style.display = 'block';
-    }
-
-    function finalResult(result) {
-        document.getElementById('resultMessage').innerText = result;
-        document.getElementById('enteredPrice').value = ''; // 清空金额输入框
-    }
-</script>
-
+        function finalResult(result) {
+            document.getElementById('result').innerHTML = result;
+        }
+    </script>
 </body>
 </html>
