@@ -147,30 +147,34 @@
     <div id="result"></div>
 
     <script>
-        const API_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev/';
+<script>
+    const API_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/";
 
- function queryData() {
-    console.log('开始执行 queryData');
-    const trackingNumber = document.getElementById('trackingNumber').value.trim();
-    if (!trackingNumber) return alert('请输入快递单号');
+    function queryData() {
+        console.log('开始执行 queryData');
+        const trackingNumber = document.getElementById('trackingNumber').value.trim();
+        if (!trackingNumber) return alert('请输入快递单号');
 
-    fetch(API_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            action: "get",
-            trackingNumber: trackingNumber
+        fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                action: "get",
+                trackingNumber: trackingNumber
+            })
         })
-    })
-    .then(res => res.json())
-    .then(data => updateResult(data))
-    .catch(err => {
-        console.error("请求失败：", err);
-        document.getElementById("result").textContent = "请求失败，请稍后再试。";
-    });
-}
+        .then(res => res.json())
+        .then(data => {
+            console.log("返回结果：", data);
+            updateResult(data);
+        })
+        .catch(err => {
+            console.error("请求失败：", err);
+            document.getElementById("result").textContent = "请求失败，请稍后再试。";
+        });
+    }
 
         function submitForm() {
             const trackingNumber = document.getElementById('trackingNumber').value.trim();
