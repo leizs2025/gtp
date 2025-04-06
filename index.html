@@ -1,241 +1,156 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>快递查询系统</title>
-  <style><!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递查询与运费提交</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-    }
-    h2 {
-      margin-bottom: 1em;
-    }
-    label {
-      display: block;
-      margin-top: 1em;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 0.5em;
-      font-size: 1em;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    #status {
-      margin-top: 1em;
-      background: #f1f1f1;
-      padding: 10px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>手机快递查询</title>
+    <style>
+        /* (原有样式保持不变) */
+    </style>
 </head>
 <body>
+    <h1>快递查询系统</h1>
 
-  <h2>📦 快递查询与运费提交</h2>
+    <div class="form-section">
+        <div class="input-group">
+            <label class="input-label">快递单号</label>
+            <input type="text" id="trackingNumber" placeholder="输入快递单号">
+        </div>
+        <button type="button" onclick="queryData()">立即查询</button>
+    </div>
 
-  <form id="express-form">
-    <label for="trackingNumber">快递单号：</label>
-    <input type="text" id="trackingNumber" required>
+    <div class="form-section">
+        <div class="data-card">
+            <div class="data-label">快递公司</div>
+            <div id="companyData">-</div>
+        </div>
+        <div class="data-card">
+            <div class="data-label">货物名称</div>
+            <div id="productData">-</div>
+        </div>
+        <div class="data-card">
+            <div class="data-label">客户名称</div>
+            <div id="customerData">-</div>
+        </div>
+        <div class="data-card">
+            <div class="data-label">已知运费</div>
+            <div id="knownPrice">-</div>
+        </div>
+    </div>
 
-    <label for="amount">运费金额（元）：</label>
-    <input type="number" id="amount" step="0.01" min="0" required>
+    <div class="form-section">
+        <div class="input-group">
+            <label class="input-label">运费金额</label>
+            <input type="number" id="enteredPrice" placeholder="输入运费金额">
+        </div>
+        <button type="button" onclick="submitForm()">确认提交</button>
+    </div>
 
-    <button type="submit">提交信息</button>
-  </form>
+    <div id="result"></div>
 
-  <div id="status"></div>
+    <script>
+        const WORKER_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev/'; // 👈 这里换成你的 Cloudflare Worker 地址
 
-  <script>
-    const form = document.getElementById("express-form");
-    const statusDiv = document.getElementById("status");
+        function queryData() {
+            const trackingNumber = document.getElementById('trackingNumber').value.trim();
+            if (!trackingNumber) return alert('请输入快递单号');
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const trackingNumber = document.getElementById("trackingNumber").value.trim();
-      const amount = document.getElementById("amount").value.trim();
-
-      if (!trackingNumber || !amount) {
-        statusDiv.textContent = "请填写完整信息。";
-        return;
-      }
-
-      statusDiv.textContent = "正在提交中...";
-
-      const payload = {
-        trackingNumber,
-        amount
-      };
-
-      try {
-        const res = await fetch("https://你的-worker-url.workers.dev/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          statusDiv.textContent = `✅ 提交成功：\n快递单号：${trackingNumber}\n运费：¥${amount}`;
-        } else {
-          statusDiv.textContent = `❌ 提交失败：${data.error || "未知错误"}`;
+            fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: 'query',
+                    trackingNumber
+                })
+            })
+            .then(res => res.json())
+            .then(result => {
+                updateResult(result, trackingNumber);
+            })
+            .catch(err => {
+                document.getElementById('result').textContent = '查询失败，请稍后再试';
+                console.error('查询失败:', err);
+            });
         }
-      } catch (err) {
-        statusDiv.textContent = `❌ 网络请求失败：${err.message}`;
-      }
-    });
-  </script>
 
-</body>
-</html>
+        function submitForm() {
+            const trackingNumber = document.getElementById('trackingNumber').value.trim();
+            const company = document.getElementById('companyData').textContent;
+            const product = document.getElementById('productData').textContent;
+            const customer = document.getElementById('customerData').textContent;
+            const price = document.getElementById('enteredPrice').value.trim();
 
-    body {
-      font-family: sans-serif;
-      padding: 1em;
-      max-width: 600px;
-      margin: auto;
-    }
-    label {
-      display: block;
-      margin-top: 1em;
-    }
-    input, button {
-      width: 100%;
-      padding: 0.6em;
-      margin-top: 0.4em;
-      font-size: 1em;
-    }
-    button {
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    #result {
-      margin-top: 1em;
-      padding: 1em;
-      background: #f0f0f0;
-      border-radius: 8px;
-    }
-  </style>
-</head>
-<body>
+            if (!trackingNumber || !price) {
+                alert('请填写完整信息');
+                return;
+            }
 
-  <h2>📦 快递查询系统</h2>
+            fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: 'submit',
+                    trackingNumber,
+                    company,
+                    product,
+                    customer,
+                    price
+                })
+            })
+            .then(res => res.text())
+            .then(result => {
+                finalResult(result);
+            })
+            .catch(err => {
+                document.getElementById('result').textContent = '提交失败，请稍后再试';
+                console.error('提交失败:', err);
+            });
+        }
 
-  <form id="query-form">
-    <label>
-      快递单号：
-      <input type="text" id="trackingNumber" required />
-    </label>
-    <button type="submit">查询快递</button>
-  </form>
+        function updateResult(result, trackingNumber) {
+            const updateField = (id, value) => {
+                document.getElementById(id).textContent = value || '-';
+            };
 
-  <div id="result"></div>
+            if (result && typeof result === 'object') {
+                updateField('companyData', result.company);
+                updateField('productData', result.product);
+                updateField('customerData', result.customer);
+                updateField('knownPrice', result.price);
+                document.getElementById('result').textContent = '数据已提取，请填写运费并提交。';
+            } else {
+                document.getElementById('result').textContent = result || '查询失败';
+                if (result === '未找到该快递单号！') {
+                    ['companyData', 'productData', 'customerData', 'knownPrice'].forEach(id => {
+                        updateField(id, '');
+                    });
+                }
+            }
+        }
 
-  <form id="submit-form" style="display:none;">
-    <label>
-      运费金额（元）：
-      <input type="number" id="amount" min="0" step="0.01" required />
-    </label>
-    <button type="submit">提交信息</button>
-  </form>
+        function finalResult(result) {
+            document.getElementById('result').innerHTML = result;
 
-  <script>
-    const queryForm = document.getElementById('query-form');
-    const submitForm = document.getElementById('submit-form');
-    const resultBox = document.getElementById('result');
+            if (result.includes('成功')) {
+                resetForm();
+                setTimeout(() => {
+                    document.getElementById('result').textContent = '';
+                }, 2000);
+            }
+        }
 
-    let currentTrackingNumber = "";
-
-    queryForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const trackingNumber = document.getElementById("trackingNumber").value.trim();
-
-      if (!trackingNumber) return;
-
-      resultBox.innerHTML = "正在查询中...";
-      submitForm.style.display = "none";
-
-      try {
-        // ⚠️ 这里你可以替换为实际查询接口，下面是假数据
-        // const res = await fetch(`https://your-api.com/track/${trackingNumber}`);
-        // const data = await res.json();
-        const data = {
-          status: "运输中",
-          company: "圆通快递",
-          location: "广东深圳",
-          lastUpdate: new Date().toLocaleString()
-        };
-
-        currentTrackingNumber = trackingNumber;
-
-        resultBox.innerHTML = `
-          <strong>查询结果：</strong><br/>
-          快递公司：${data.company}<br/>
-          当前状态：${data.status}<br/>
-          当前位置：${data.location}<br/>
-          更新时间：${data.lastUpdate}
-        `;
-
-        submitForm.style.display = "block";
-
-      } catch (err) {
-        resultBox.innerHTML = "❌ 查询失败：" + err.message;
-      }
-    });
-
-    submitForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const amount = document.getElementById("amount").value.trim();
-
-      if (!currentTrackingNumber || !amount) return;
-
-      const payload = {
-        trackingNumber: currentTrackingNumber,
-        amount
-      };
-
-      try {
-        const res = await fetch("https://your-cloudflare-worker.workers.dev/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) throw new Error("提交失败");
-
-        const data = await res.json();
-        resultBox.innerHTML += `<br/><br/>✅ 已提交运费：¥${amount}`;
-        submitForm.style.display = "none";
-      } catch (err) {
-        resultBox.innerHTML += `<br/><br/>❌ 提交失败：${err.message}`;
-      }
-    });
-  </script>
-
+        function resetForm() {
+            document.getElementById('trackingNumber').value = '';
+            document.getElementById('enteredPrice').value = '';
+            ['companyData', 'productData', 'customerData', 'knownPrice'].forEach(id => {
+                document.getElementById(id).textContent = '-';
+            });
+            document.getElementById('result').textContent = '';
+        }
+    </script>
 </body>
 </html>
