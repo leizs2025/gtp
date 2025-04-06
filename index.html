@@ -102,7 +102,7 @@
         /* 响应式布局 */
         @media (max-width: 480px) {
             input, button {
-                font-size: 16px; /* 防止自动缩放 */
+                font-size: 16px;
             }
             .form-section {
                 padding: 10px;
@@ -154,42 +154,48 @@
     <div id="result"></div>
 
     <script>
-        const GAS_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev'; // 替换为你的 Google Apps Script URL
+        const GAS_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev'; // ✅ 你的 Cloudflare Worker 地址
 
         function queryData() {
-            var trackingNumber = document.getElementById('trackingNumber').value;
+            const trackingNumber = document.getElementById('trackingNumber').value;
 
-            fetch(GAS_URL + '?action=query', {
+            fetch(GAS_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ trackingNumber: trackingNumber }),
+                body: JSON.stringify({ trackingNumber })
             })
             .then(response => response.json())
             .then(data => updateResult(data, trackingNumber))
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = '查询失败，请稍后重试。';
+            });
         }
 
         function submitForm() {
-            var trackingNumber = document.getElementById('trackingNumber').value;
-            var company = document.getElementById('companyData').textContent;
-            var product = document.getElementById('productData').textContent;
-            var customer = document.getElementById('customerData').textContent;
-            var enteredPrice = document.getElementById('enteredPrice').value;
+            const trackingNumber = document.getElementById('trackingNumber').value;
+            const company = document.getElementById('companyData').textContent;
+            const product = document.getElementById('productData').textContent;
+            const customer = document.getElementById('customerData').textContent;
+            const enteredPrice = document.getElementById('enteredPrice').value;
 
-            fetch(GAS_URL + '?action=submit', {
+            fetch(GAS_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    trackingNumber: trackingNumber,
-                    company: company,
-                    product: product,
-                    customer: customer,
-                    enteredPrice: enteredPrice
-                }),
+                    trackingNumber,
+                    company,
+                    product,
+                    customer,
+                    enteredPrice
+                })
             })
             .then(response => response.json())
             .then(data => finalResult(data))
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = '提交失败，请稍后重试。';
+            });
         }
 
         function updateResult(result, trackingNumber) {
