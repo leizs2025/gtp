@@ -152,73 +152,77 @@
   <div id="result"></div>
 
   <script>
-    const GAS_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev'; // Cloudflare Worker 代理地址
+     const GAS_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev'; // 你部署的 Cloudflare Worker 地址
 
     function queryData() {
-      const trackingNumber = document.getElementById('trackingNumber').value;
+        var trackingNumber = document.getElementById('trackingNumber').value;
 
-      fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'query',
-          trackingNumber: trackingNumber
+        fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'query', // ✅ 必填字段
+                trackingNumber: trackingNumber
+            }),
         })
-      })
         .then(response => response.json())
         .then(data => updateResult(data, trackingNumber))
         .catch(error => {
-          console.error('查询错误:', error);
-          document.getElementById('result').textContent = '查询失败，请稍后重试';
+            console.error('查询错误:', error);
+            document.getElementById('result').textContent = '查询出错，请稍后重试。';
         });
     }
 
     function submitForm() {
-      const trackingNumber = document.getElementById('trackingNumber').value;
-      const company = document.getElementById('companyData').textContent;
-      const product = document.getElementById('productData').textContent;
-      const customer = document.getElementById('customerData').textContent;
-      const enteredPrice = document.getElementById('enteredPrice').value;
+        var trackingNumber = document.getElementById('trackingNumber').value;
+        var company = document.getElementById('companyData').textContent;
+        var product = document.getElementById('productData').textContent;
+        var customer = document.getElementById('customerData').textContent;
+        var enteredPrice = document.getElementById('enteredPrice').value;
 
-      fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'submit',
-          trackingNumber,
-          company,
-          product,
-          customer,
-          enteredPrice
+        fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'submit', // ✅ 必填字段
+                trackingNumber: trackingNumber,
+                company: company,
+                product: product,
+                customer: customer,
+                enteredPrice: enteredPrice
+            }),
         })
-      })
-        .then(response => response.text())
-        .then(data => {
-          document.getElementById('result').innerHTML = data;
-        })
+        .then(response => response.json())
+        .then(data => finalResult(data))
         .catch(error => {
-          console.error('提交错误:', error);
-          document.getElementById('result').textContent = '提交失败，请稍后重试';
+            console.error('提交错误:', error);
+            document.getElementById('result').textContent = '提交失败，请稍后重试。';
         });
     }
 
     function updateResult(result, trackingNumber) {
-      const updateField = (id, value) => {
-        document.getElementById(id).textContent = value || '-';
-      };
+        const updateField = (id, value) => {
+            document.getElementById(id).textContent = value || '-';
+        };
 
-      if (result && typeof result === 'object') {
-        updateField('companyData', result.company);
-        updateField('productData', result.product);
-        updateField('customerData', result.customer);
-        updateField('knownPrice', result.price);
-        document.getElementById('result').textContent = '数据已提取，请填写运费并提交。';
-      } else {
-        document.getElementById('result').textContent = result || '查询失败';
-        if (result === '未找到该快递单号！') {
-          ['companyData', 'productData', 'customerData', 'knownPrice'].forEach(id => updateField(id, ''));
+        if (result && typeof result === 'object') {
+            updateField('companyData', result.company);
+            updateField('productData', result.product);
+            updateField('customerData', result.customer);
+            updateField('knownPrice', result.price);
+            document.getElementById('result').textContent = '数据已提取，请填写运费并提交。';
+        } else {
+            document.getElementById('result').textContent = result || '查询失败';
+            if (result === '未找到该快递单号！') {
+                ['companyData', 'productData', 'customerData', 'knownPrice'].forEach(id => {
+                    updateField(id, '');
+                });
+            }
         }
-      }
+    }
+
+    function finalResult(result) {
+        document.getElementById('result').innerHTML = result;
     }
   </script>
 </body>
