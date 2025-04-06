@@ -1,60 +1,117 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GPT 聊天助手</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快递查询系统</title>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            padding: 15px;
+            font-family: Arial, sans-serif;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-  <div id="chat"></div>
-  <form id="form">
-    <input id="input" placeholder="输入你的问题..." />
-    <button type="submit">发送</button>
-  </form>
 
-  <script>
-    const API_URL = "https://wandering-moon-bdc2.jeenty.workers.dev"; // 改成你自己的地址
+<h1>快递查询系统</h1>
 
-    const chat = document.getElementById("chat");
-    const form = document.getElementById("form");
-    const input = document.getElementById("input");
+<div class="input-group">
+    <label for="trackingNumber">快递单号</label>
+    <input type="text" id="trackingNumber" placeholder="输入快递单号">
+    <button onclick="queryData()">立即查询</button>
+</div>
 
-    const messages = [
-      { role: "system", content: "你是一个聪明友好的 AI 助手。" }
-    ];
+<div class="result" id="queryResult" style="display: none;">
+    <h2>查询结果</h2>
+    <p><strong>快递公司：</strong><span id="companyData">-</span></p>
+    <p><strong>货物名称：</strong><span id="productData">-</span></p>
+    <p><strong>客户名称：</strong><span id="customerData">-</span></p>
+    <p><strong>已知运费：</strong><span id="knownPrice">-</span></p>
+</div>
 
-    function addMessage(content, role) {
-      const msg = document.createElement("div");
-      msg.textContent = `${role === "user" ? "你" : "GPT"}：${content}`;
-      chat.appendChild(msg);
-      chat.scrollTop = chat.scrollHeight;
+<div class="input-group">
+    <label for="enteredPrice">运费金额</label>
+    <input type="number" id="enteredPrice" placeholder="输入运费金额">
+    <button onclick="submitForm()">确认提交</button>
+</div>
+
+<p id="resultMessage"></p>
+
+<script>
+    function queryData() {
+        var trackingNumber = document.getElementById('trackingNumber').value.trim();
+        if (trackingNumber === '') {
+            alert('请输入快递单号！');
+            return;
+        }
+
+        google.script.run.withSuccessHandler(updateResult).getData(trackingNumber);
     }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const userInput = input.value.trim();
-      if (!userInput) return;
+    function submitForm() {
+        var trackingNumber = document.getElementById('trackingNumber').value.trim();
+        var company = document.getElementById('companyData').textContent;
+        var product = document.getElementById('productData').textContent;
+        var customer = document.getElementById('customerData').textContent;
+        var enteredPrice = document.getElementById('enteredPrice').value;
 
-      addMessage(userInput, "user");
-      messages.push({ role: "user", content: userInput });
-      input.value = "";
+        if (trackingNumber === '' || company === '-' || product === '-' || customer === '-' || enteredPrice === '') {
+            alert('请查询到快递信息后再提交运费！');
+            return;
+        }
 
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ messages })
-        });
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || "[无回复]";
-        addMessage(reply, "assistant");
-        messages.push({ role: "assistant", content: reply });
-      } catch (err) {
-        addMessage(`[请求失败] ${err.message}`, "assistant");
-      }
-    });
-  </script>
+        google.script.run.withSuccessHandler(finalResult).writeData(trackingNumber, company, product, customer, enteredPrice);
+    }
+
+    function updateResult(result) {
+        if (typeof result === 'string') {
+            document.getElementById('resultMessage').innerText = result;
+            document.getElementById('queryResult').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('companyData').innerText = result.company || '-';
+        document.getElementById('productData').innerText = result.product || '-';
+        document.getElementById('customerData').innerText = result.customer || '-';
+        document.getElementById('knownPrice').innerText = result.price || '-';
+
+        document.getElementById('resultMessage').innerText = '数据已提取，请填写运费并提交。';
+        document.getElementById('queryResult').style.display = 'block';
+    }
+
+    function finalResult(result) {
+        document.getElementById('resultMessage').innerText = result;
+        document.getElementById('enteredPrice').value = ''; // 清空金额输入框
+    }
+</script>
+
 </body>
 </html>
