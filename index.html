@@ -154,24 +154,33 @@
   <script>
      const GAS_URL = 'https://wandering-moon-bdc2.jeenty.workers.dev'; // 你部署的 Cloudflare Worker 地址
 
-    function queryData() {
-        var trackingNumber = document.getElementById('trackingNumber').value;
+function queryData() {
+    var trackingNumber = document.getElementById('trackingNumber').value;
 
-        fetch(GAS_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'query', // ✅ 必填字段
-                trackingNumber: trackingNumber
-            }),
-        })
-        .then(response => response.json())
-        .then(data => updateResult(data, trackingNumber))
-        .catch(error => {
-            console.error('查询错误:', error);
-            document.getElementById('result').textContent = '查询出错，请稍后重试。';
-        });
-    }
+    fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'query',
+            trackingNumber: trackingNumber
+        }),
+    })
+    .then(response => response.text())  // 先拿纯文本
+    .then(text => {
+        try {
+            const data = JSON.parse(text); // 尝试转成 JSON
+            updateResult(data, trackingNumber);
+        } catch (err) {
+            console.error('返回非 JSON:', text); // 输出 HTML 或错误页面
+            document.getElementById('result').textContent = '服务器返回异常内容，请检查 Cloudflare Worker 或 Google Apps Script 是否出错。';
+        }
+    })
+    .catch(error => {
+        console.error('查询错误:', error);
+        document.getElementById('result').textContent = '查询出错，请稍后重试。';
+    });
+}
+
 
     function submitForm() {
         var trackingNumber = document.getElementById('trackingNumber').value;
