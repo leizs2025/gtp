@@ -1,0 +1,41 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>简易 GPT 聊天网页</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 2em; }
+    textarea { width: 100%; height: 100px; margin-top: 1em; }
+    button { padding: 0.5em 1em; margin-top: 1em; }
+    .chat { white-space: pre-wrap; margin-top: 1em; border: 1px solid #ccc; padding: 1em; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h1>GPT 聊天</h1>
+  <textarea id="input" placeholder="请输入你的问题..."></textarea>
+  <br />
+  <button onclick="sendMessage()">发送</button>
+  <div class="chat" id="output"></div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("input").value;
+      const output = document.getElementById("output");
+      output.innerText = "等待回复中...";
+      const response = await fetch("https://你的-cloudflare-worker地址/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [{ role: "user", content: input }]
+        })
+      });
+      const data = await response.json();
+      const reply = data.choices?.[0]?.message?.content || "没有返回内容";
+      output.innerText = reply;
+    }
+  </script>
+</body>
+</html>
