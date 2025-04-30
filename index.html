@@ -2,120 +2,88 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>手机快递查询</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>快递查询系统</title>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
       background-color: #f5f5f5;
       padding: 15px;
-      min-height: 100vh;
+      font-family: sans-serif;
     }
-
     h1 {
       text-align: center;
-      color: #2c3e50;
-      font-size: 1.8rem;
-      margin-bottom: 1.5rem;
-      padding: 10px 0;
+      margin-bottom: 1rem;
     }
-
     .form-section {
       background: white;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 15px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-
     .input-group {
       margin-bottom: 1.2rem;
     }
-
     .input-label {
       display: block;
-      color: #666;
-      font-size: 0.95rem;
       margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: #666;
     }
-
-    input[type='text'],
-    input[type='number'] {
+    input, button {
       width: 100%;
       padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
       font-size: 1rem;
-      background-color: #f9f9f9;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
-
-    input:focus {
-      outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-    }
-
     button {
-      width: 100%;
-      padding: 14px;
       background: #3498db;
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: background 0.2s;
       margin-top: 10px;
+      cursor: pointer;
     }
-
     button:hover {
       background: #2980b9;
     }
-
     .data-block {
       background: #eef2f5;
       border-radius: 10px;
       padding: 15px;
-      font-size: 0.95rem;
       margin-bottom: 15px;
     }
-
     .data-line {
       margin-bottom: 10px;
     }
-
     .data-label {
       font-weight: bold;
-      color: #333;
-      margin-right: 8px;
     }
-
     #result {
+      background: white;
       padding: 15px;
       border-radius: 8px;
-      background: white;
-      color: #2c3e50;
       margin-top: 15px;
     }
-
-    @media (max-width: 480px) {
-      input,
-      button {
-        font-size: 16px;
-      }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-row button {
+      flex: 1;
     }
   </style>
 </head>
 <body>
   <h1>快递查询系统</h1>
 
-  <!-- 查询输入区域 -->
+  <!-- 缓存控制按钮区域 -->
+  <div class="form-section btn-row">
+    <button onclick="loadCache()">📥 加载缓存</button>
+    <button onclick="clearCache()">🗑️ 清除缓存</button>
+  </div>
+
+  <!-- 查询输入 -->
   <div class="form-section">
     <div class="input-group">
       <label class="input-label">快递单号</label>
@@ -124,13 +92,13 @@
     <button type="button" onclick="queryData()">立即查询</button>
   </div>
 
-  <!-- 统一显示卡片区域 -->
+  <!-- 显示查询 + 提交区域 -->
   <div class="form-section" id="resultSection" style="display:none;">
     <div class="data-block">
-      <div class="data-line"><span class="data-label">快递公司:</span><span id="companyData">-</span></div>
-      <div class="data-line"><span class="data-label">货物名称:</span><span id="productData">-</span></div>
-      <div class="data-line"><span class="data-label">客户名称:</span><span id="customerData">-</span></div>
-      <div class="data-line"><span class="data-label">已知运费:</span><span id="knownPrice">-</span></div>
+      <div class="data-line"><span class="data-label">快递公司:</span> <span id="companyData">-</span></div>
+      <div class="data-line"><span class="data-label">货物名称:</span> <span id="productData">-</span></div>
+      <div class="data-line"><span class="data-label">客户名称:</span> <span id="customerData">-</span></div>
+      <div class="data-line"><span class="data-label">已知运费:</span> <span id="knownPrice">-</span></div>
     </div>
 
     <div class="input-group">
@@ -146,51 +114,73 @@
     const API_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas1";
     const submittedSet = new Set();
     let lastFetchedData = null;
+    let allRecords = [];
 
-    function queryData() {
-      const input = document.getElementById("trackingNumber").value.trim();
-      if (!input) return alert("请输入快递单号或后5位");
-
+    function loadCache() {
       fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "query",
-          trackingNumber: input
-        })
+        body: JSON.stringify({ action: "all" })
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data && typeof data === "object" && !data.error) {
-            lastFetchedData = data;
-            document.getElementById("companyData").textContent = data.company || "-";
-            document.getElementById("productData").textContent = data.product || "-";
-            document.getElementById("customerData").textContent = data.customer || "-";
-            document.getElementById("knownPrice").textContent = data.price || "-";
-            document.getElementById("resultSection").style.display = "block";
-            document.getElementById("result").textContent = "查询成功，请输入金额提交";
-          } else {
-            document.getElementById("result").textContent = data?.error || "未找到快递单号";
-            document.getElementById("resultSection").style.display = "none";
-          }
-        })
-        .catch(err => {
-          console.error("查询失败：", err);
-          document.getElementById("result").textContent = "请求失败，请稍后再试。";
-        });
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          allRecords = data;
+          document.getElementById("result").textContent = `✅ 成功加载缓存，共 ${data.length} 条记录`;
+        } else {
+          document.getElementById("result").textContent = "⚠️ 缓存加载失败，格式不正确";
+        }
+      })
+      .catch(err => {
+        console.error("缓存加载失败", err);
+        document.getElementById("result").textContent = "❌ 缓存加载失败，请检查网络或接口";
+      });
+    }
+
+    function clearCache() {
+      allRecords = [];
+      document.getElementById("result").textContent = "🧹 缓存已清除";
+    }
+
+    function queryData() {
+      const input = document.getElementById("trackingNumber").value.trim();
+      if (!input) return alert("请输入快递单号");
+
+      if (allRecords.length === 0) {
+        return alert("请先点击“加载缓存”以获取数据");
+      }
+
+      // 查询：后5位或完整
+      let match = allRecords.find(item => item.trackingNumber === input);
+      if (!match && /^\d{5}$/.test(input)) {
+        match = allRecords.find(item => item.trackingNumber?.slice(-5) === input);
+      }
+
+      if (match) {
+        updateResult(match);
+      } else {
+        document.getElementById("resultSection").style.display = "none";
+        document.getElementById("result").textContent = "❌ 未找到匹配项";
+      }
+    }
+
+    function updateResult(data) {
+      lastFetchedData = data;
+      document.getElementById("companyData").textContent = data.company || "-";
+      document.getElementById("productData").textContent = data.product || "-";
+      document.getElementById("customerData").textContent = data.customer || "-";
+      document.getElementById("knownPrice").textContent = data.price || "-";
+      document.getElementById("resultSection").style.display = "block";
+      document.getElementById("result").textContent = "✅ 查询成功，请填写金额后提交";
     }
 
     function submitForm() {
       const trackingNumber = document.getElementById("trackingNumber").value.trim();
       const enteredPrice = document.getElementById("enteredPrice").value.trim();
 
-      if (!trackingNumber || !enteredPrice) {
-        return alert("请填写完整信息后提交");
-      }
-
-      if (submittedSet.has(trackingNumber)) {
-        return alert("该单号已提交过，请勿重复操作！");
-      }
+      if (!trackingNumber || !enteredPrice) return alert("请填写完整信息后提交");
+      if (submittedSet.has(trackingNumber)) return alert("该单号已提交过，请勿重复操作！");
+      if (!lastFetchedData) return alert("请先查询有效单号");
 
       fetch(API_URL, {
         method: "POST",
@@ -198,24 +188,25 @@
         body: JSON.stringify({
           action: "submit",
           trackingNumber,
-          company: lastFetchedData?.company || "",
-          product: lastFetchedData?.product || "",
-          customer: lastFetchedData?.customer || "",
+          company: lastFetchedData.company || "",
+          product: lastFetchedData.product || "",
+          customer: lastFetchedData.customer || "",
           enteredPrice
         })
       })
-        .then(res => res.text())
-        .then(result => {
-          document.getElementById("result").innerHTML = result;
-          if (result.includes("成功")) {
-            submittedSet.add(trackingNumber);
-            clearForm();
-          }
-        })
-        .catch(err => {
-          console.error("提交失败：", err);
-          document.getElementById("result").textContent = "提交失败，请稍后再试。";
-        });
+      .then(res => res.text())
+      .then(result => {
+        document.getElementById("result").innerHTML = result;
+        if (result.includes("成功")) {
+          submittedSet.add(trackingNumber);
+          allRecords = []; // 提交后自动清除缓存
+          clearForm();
+        }
+      })
+      .catch(err => {
+        console.error("提交失败", err);
+        document.getElementById("result").textContent = "提交失败，请稍后再试";
+      });
     }
 
     function clearForm() {
