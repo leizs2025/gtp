@@ -1,223 +1,308 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>快递查询系统</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>快递查询与批量提交系统</title>
   <style>
-    body {
-      background-color: #f5f5f5;
-      padding: 15px;
-      font-family: sans-serif;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
+    body { background-color: #f5f5f5; padding: 15px; font-family: sans-serif; }
+    h1 { text-align: center; margin-bottom: 1rem; }
     .form-section {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 15px;
+      background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .input-group {
-      margin-bottom: 1.2rem;
+    .input-group { margin-bottom: 1rem; }
+    .input-label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+    input, button, select {
+      width: 100%; padding: 10px; font-size: 1rem; border-radius: 8px; box-sizing: border-box;
     }
-    .input-label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-      color: #666;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
+    input, select { border: 1px solid #ccc; }
     button {
-      background: #3498db;
-      color: white;
-      border: none;
-      margin-top: 10px;
-      cursor: pointer;
+      background: #3498db; color: white; border: none; margin-top: 10px; cursor: pointer;
     }
-    button:hover {
-      background: #2980b9;
+    button:hover { background: #2980b9; }
+    .data-line { margin-bottom: 8px; }
+    .data-label { font-weight: bold; }
+    #previewList div {
+      padding: 8px; border-bottom: 1px solid #eee;
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .data-block {
-      background: #eef2f5;
-      border-radius: 10px;
+    .del-btn {
+      background: none; color: red; border: none; font-size: 18px; cursor: pointer;
+    }
+    .status-bar { padding: 10px; border-radius: 6px; font-weight: bold; margin: 10px 0; }
+    .success { background: #e0f8e9; color: #2c7a3f; }
+    .error { background: #fdecea; color: #c0392b; }
+    #ticketPreview {
+      width: 380px;
+      min-height: 400px;
+      max-height: 600px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border: 1px dashed #ccc;
       padding: 15px;
-      margin-bottom: 15px;
+      font-family: sans-serif;
+      font-size: 16px;
+      white-space: pre-wrap;
+      margin-top: 15px;
+      line-height: 1.6;
+      word-break: break-word;
     }
-    .data-line {
+    .ticket-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+    }
+    .ticket-table td {
+      padding: 4px 0;
+      vertical-align: top;
+    }
+    .ticket-header {
+      font-weight: bold;
+      text-align: center;
       margin-bottom: 10px;
     }
-    .data-label {
+    .ticket-summary {
+      text-align: right;
       font-weight: bold;
-    }
-    #result {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 15px;
-    }
-    .btn-row {
-      display: flex;
-      gap: 10px;
-    }
-    .btn-row button {
-      flex: 1;
+      margin-top: 10px;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-  <h1>快递查询系统</h1>
-
-  <!-- 缓存控制按钮区域 -->
-  <div class="form-section btn-row">
-    <button onclick="loadCache()">📥 加载缓存</button>
-    <button onclick="clearCache()">🗑️ 清除缓存</button>
-  </div>
-
-  <!-- 查询输入 -->
+  <h1>快递查询与批量提交系统</h1>
   <div class="form-section">
     <div class="input-group">
       <label class="input-label">快递单号</label>
-      <input type="text" id="trackingNumber" placeholder="输入快递单号或后5位" />
+      <input type="text" id="trackingNumber" placeholder="输入快递单号或后5位">
+      <button onclick="queryData()">🔍 查询</button>
     </div>
-    <button type="button" onclick="queryData()">立即查询</button>
-  </div>
 
-  <!-- 显示查询 + 提交区域 -->
-  <div class="form-section" id="resultSection" style="display:none;">
-    <div class="data-block">
-      <div class="data-line"><span class="data-label">快递公司:</span> <span id="companyData">-</span></div>
-      <div class="data-line"><span class="data-label">货物名称:</span> <span id="productData">-</span></div>
-      <div class="data-line"><span class="data-label">客户名称:</span> <span id="customerData">-</span></div>
-      <div class="data-line"><span class="data-label">已知运费:</span> <span id="knownPrice">-</span></div>
-    </div>
+    <div class="data-line"><span class="data-label">快递公司:</span> <span id="companyData">-</span></div>
+    <div class="data-line"><span class="data-label">货物名称:</span> <span id="productData">-</span></div>
+    <div class="data-line"><span class="data-label">客户名称:</span> <span id="customerData">-</span></div>
+    <div class="data-line"><span class="data-label">已知运费:</span> <span id="knownPrice">-</span></div>
 
     <div class="input-group">
       <label class="input-label">运费金额</label>
-      <input type="number" id="enteredPrice" placeholder="输入运费金额" />
+      <input type="number" id="enteredPrice" placeholder="输入运费金额">
     </div>
-    <button type="button" onclick="submitForm()">确认提交</button>
+    <button onclick="addToCache()">➕ 加入缓存</button>
+    <div id="statusBar" class="status-bar" style="display:none;"></div>
+
+    <hr style="margin: 20px 0;">
+    <h3>📋 已缓存记录</h3>
+    <button onclick="loadCache()">📥 加载缓存</button>
+    <div id="previewList" style="margin-top: 10px;"></div>
+    <button onclick="submitAll()">📤 提交全部记录</button>
+    <button onclick="clearCache()" style="background:#e74c3c">🗑️ 清空缓存</button>
+    <div class="input-group">
+      <label class="input-label">🧾 筛选客户生成小票</label>
+      <select id="ticketSelector" onchange="renderTicket()"><option value="">请选择客户</option></select>
+    </div>
+        <div id="ticketPreview" style="display:none;" style="display:none;"></div>
+
+    <button onclick="downloadTicketAsImage()">📸 下载小票截图</button>
   </div>
 
-  <div id="result"></div>
+<script>
+const API_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas1";
+let allRecords = [];
+let pendingSubmissions = [], lastFetched = {}, matchedTrackingNumber = "";
 
-  <script>
-    const API_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas1";
-    const submittedSet = new Set();
-    let lastFetchedData = null;
-    let allRecords = [];
+function loadCache() {
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "all" })
+  })
+  .then(res => res.json())
+  .then(data => {
+    allRecords = data;
+    showStatus("✅ 缓存加载成功，共 " + allRecords.length + " 条记录", "success");
+  })
+  .catch(() => showStatus("缓存加载失败", "error"));
+}
 
-    function loadCache() {
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "all" })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          allRecords = data;
-          document.getElementById("result").textContent = `✅ 成功加载缓存，共 ${data.length} 条记录`;
-        } else {
-          document.getElementById("result").textContent = "⚠️ 缓存加载失败，格式不正确";
-        }
-      })
-      .catch(err => {
-        console.error("缓存加载失败", err);
-        document.getElementById("result").textContent = "❌ 缓存加载失败，请检查网络或接口";
-      });
+function queryData() {
+  const input = document.getElementById("trackingNumber").value.trim();
+  if (!input) return alert("请输入快递单号");
+  if (allRecords.length === 0) return showStatus("请先加载缓存", "error");
+
+  let match = allRecords.find(item => item.trackingNumber === input);
+  if (!match && input.length === 5) {
+    match = allRecords.find(item => item.trackingNumber?.slice(-5) === input);
+  }
+  if (match) {
+    lastFetched = match;
+    matchedTrackingNumber = match.trackingNumber;
+    updateDisplay(match);
+  } else {
+    showStatus("未在缓存中找到该快递单号", "error");
+  }
+}
+
+function updateDisplay(data) {
+  document.getElementById("companyData").textContent = data.company || "-";
+  document.getElementById("productData").textContent = data.product || "-";
+  document.getElementById("customerData").textContent = data.customer || "-";
+  document.getElementById("knownPrice").textContent = data.price || "-";
+  showStatus("✅ 查询成功", "success");
+}
+
+function addToCache() {
+  const price = document.getElementById("enteredPrice").value.trim();
+  const number = matchedTrackingNumber || document.getElementById("trackingNumber").value.trim();
+  if (!price || !lastFetched.company || !number) return showStatus("请查询并填写金额", "error");
+
+  const alreadyExists = pendingSubmissions.some(item => item.trackingNumber === number);
+  if (alreadyExists) return showStatus("该快递单号已存在于缓存中", "error");
+
+  pendingSubmissions.push({
+    trackingNumber: number,
+    company: lastFetched.company,
+    customer: lastFetched.customer,
+    product: lastFetched.product,
+    enteredPrice: price
+  });
+  clearForm();
+  renderPreview();
+  showStatus("✅ 已加入缓存", "success");
+}
+
+function renderPreview() {
+  const box = document.getElementById("previewList");
+  box.innerHTML = "";
+  pendingSubmissions.forEach((item, i) => {
+    const line = document.createElement("div");
+    line.innerHTML = `<div>${item.trackingNumber} - ${item.customer} - ${parseFloat(item.enteredPrice).toFixed(2)}</div><button class='del-btn' onclick='removeItem(${i})' title='删除记录'>×</button>`;
+    box.appendChild(line);
+  });
+  renderTicket();
+  updateCustomerDropdown();
+}
+
+function updateCustomerDropdown() {
+  const uniqueNames = [...new Set(pendingSubmissions.map(r => r.customer))];
+  const sel = document.getElementById("ticketSelector");
+  sel.innerHTML = '<option value="">请选择客户</option>';
+  uniqueNames.forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+}
+
+function removeItem(i) {
+  pendingSubmissions.splice(i, 1);
+  renderPreview();
+}
+
+function clearCache() {
+  pendingSubmissions = [];
+  renderPreview();
+  clearForm();
+  document.getElementById("ticketPreview").innerHTML = "";
+  showStatus("缓存与表单清除成功", "success");
+}
+
+function clearForm() {
+  document.getElementById("trackingNumber").value = "";
+  document.getElementById("enteredPrice").value = "";
+  document.getElementById("companyData").textContent = "-";
+  document.getElementById("productData").textContent = "-";
+  document.getElementById("customerData").textContent = "-";
+  document.getElementById("knownPrice").textContent = "-";
+  matchedTrackingNumber = "";
+  lastFetched = {};
+}
+
+function submitAll() {
+  if (pendingSubmissions.length === 0) return showStatus("缓存为空", "error");
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "submitBatch", list: pendingSubmissions })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.message) {
+      showStatus(res.message, "success");
+      pendingSubmissions = [];
+      renderPreview();
+      clearForm();
+    } else {
+      showStatus("提交失败", "error");
     }
+  })
+  .catch(() => showStatus("提交异常", "error"));
+}
 
-    function clearCache() {
-      allRecords = [];
-      document.getElementById("result").textContent = "🧹 缓存已清除";
-    }
+function renderTicket() {
+  const name = document.getElementById("ticketSelector").value;
+  const area = document.getElementById("ticketPreview");
+  if (!name) {
+    area.innerHTML = "";
+    area.style.display = "none";
+    return;
+  }
+  area.style.display = "block";
 
-    function queryData() {
-      const input = document.getElementById("trackingNumber").value.trim();
-      if (!input) return alert("请输入快递单号");
+  const filtered = pendingSubmissions.filter(r => r.customer === name);
+  let total = 0;
+  const date = new Date().toLocaleDateString();
 
-      if (allRecords.length === 0) {
-        return alert("请先点击“加载缓存”以获取数据");
-      }
+  let rowsHtml = "";
+  filtered.forEach((r, i) => {
+    const price = parseFloat(r.enteredPrice).toFixed(2);
+    total += parseFloat(price);
+    rowsHtml += `<tr>
+      <td style='width:5%'>${i + 1}.</td>
+      <td style='width:55%'>${r.trackingNumber}</td>
+      <td style='width:20%;text-align:left;'>${r.company}</td>
+      <td style='width:20%;text-align:right;'>${price}</td>
+    </tr>
+    <tr>
+      <td></td><td colspan='3'>${r.product}</td>
+    </tr>`;
+  });
 
-      // 查询：后5位或完整
-      let match = allRecords.find(item => item.trackingNumber === input);
-      if (!match && /^\d{5}$/.test(input)) {
-        match = allRecords.find(item => item.trackingNumber?.slice(-5) === input);
-      }
+  const contentHeight = 400;
+  const rowHeight = 50;
+  const requiredRows = Math.floor((contentHeight - 120) / rowHeight);
+  const emptyRows = Math.max(0, requiredRows - filtered.length);
 
-      if (match) {
-        updateResult(match);
-      } else {
-        document.getElementById("resultSection").style.display = "none";
-        document.getElementById("result").textContent = "❌ 未找到匹配项";
-      }
-    }
+  let fillerRows = "";
+  for (let i = 0; i < emptyRows; i++) {
+    fillerRows += `<tr><td colspan='4'>&nbsp;</td></tr>`;
+  }
 
-    function updateResult(data) {
-      lastFetchedData = data;
-      document.getElementById("companyData").textContent = data.company || "-";
-      document.getElementById("productData").textContent = data.product || "-";
-      document.getElementById("customerData").textContent = data.customer || "-";
-      document.getElementById("knownPrice").textContent = data.price || "-";
-      document.getElementById("resultSection").style.display = "block";
-      document.getElementById("result").textContent = "✅ 查询成功，请填写金额后提交";
-    }
+  let html = `<div class='ticket-header'>体积费 & 包裹号<br>日期：${date}<br>客户：${name}</div><br><table class='ticket-table'>`;
+  html += rowsHtml + fillerRows;
+  html += `<tr><td colspan='4'><hr></td></tr>
+           <tr><td colspan='4' class='ticket-summary'>合计：${filtered.length} 单，${total.toFixed(2)}</td></tr>`;
+  html += `</table>`;
+  area.innerHTML = html;
+}
 
-    function submitForm() {
-      const trackingNumber = document.getElementById("trackingNumber").value.trim();
-      const enteredPrice = document.getElementById("enteredPrice").value.trim();
 
-      if (!trackingNumber || !enteredPrice) return alert("请填写完整信息后提交");
-      if (submittedSet.has(trackingNumber)) return alert("该单号已提交过，请勿重复操作！");
-      if (!lastFetchedData) return alert("请先查询有效单号");
+function downloadTicketAsImage() {
+  const target = document.getElementById("ticketPreview");
+  html2canvas(target).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "ticket.jpg";
+    link.href = canvas.toDataURL("image/jpeg");
+    link.click();
+  });
+}
 
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "submit",
-          trackingNumber,
-          company: lastFetchedData.company || "",
-          product: lastFetchedData.product || "",
-          customer: lastFetchedData.customer || "",
-          enteredPrice
-        })
-      })
-      .then(res => res.text())
-      .then(result => {
-        document.getElementById("result").innerHTML = result;
-        if (result.includes("成功")) {
-          submittedSet.add(trackingNumber);
-          allRecords = []; // 提交后自动清除缓存
-          clearForm();
-        }
-      })
-      .catch(err => {
-        console.error("提交失败", err);
-        document.getElementById("result").textContent = "提交失败，请稍后再试";
-      });
-    }
-
-    function clearForm() {
-      document.getElementById("trackingNumber").value = "";
-      document.getElementById("enteredPrice").value = "";
-      document.getElementById("resultSection").style.display = "none";
-      lastFetchedData = null;
-      setTimeout(() => {
-        document.getElementById("result").textContent = "";
-      }, 2000);
-    }
-  </script>
-</body>
+function showStatus(msg, type = "success") {
+  const bar = document.getElementById("statusBar");
+  bar.textContent = msg;
+  bar.className = "status-bar " + type;
+  bar.style.display = "block";
+}
+</script>
 </html>
