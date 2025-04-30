@@ -83,7 +83,7 @@
       border-radius: 10px;
       padding: 15px;
       font-size: 0.95rem;
-      margin-top: 10px;
+      margin-bottom: 15px;
     }
 
     .data-line {
@@ -99,9 +99,9 @@
     #result {
       padding: 15px;
       border-radius: 8px;
-      margin-top: 15px;
       background: white;
       color: #2c3e50;
+      margin-top: 15px;
     }
 
     @media (max-width: 480px) {
@@ -115,6 +115,7 @@
 <body>
   <h1>快递查询系统</h1>
 
+  <!-- 查询输入区域 -->
   <div class="form-section">
     <div class="input-group">
       <label class="input-label">快递单号</label>
@@ -123,16 +124,15 @@
     <button type="button" onclick="queryData()">立即查询</button>
   </div>
 
-  <div class="form-section" id="infoCard" style="display:none;">
+  <!-- 统一显示卡片区域 -->
+  <div class="form-section" id="resultSection" style="display:none;">
     <div class="data-block">
       <div class="data-line"><span class="data-label">快递公司:</span><span id="companyData">-</span></div>
       <div class="data-line"><span class="data-label">货物名称:</span><span id="productData">-</span></div>
       <div class="data-line"><span class="data-label">客户名称:</span><span id="customerData">-</span></div>
       <div class="data-line"><span class="data-label">已知运费:</span><span id="knownPrice">-</span></div>
     </div>
-  </div>
 
-  <div class="form-section">
     <div class="input-group">
       <label class="input-label">运费金额</label>
       <input type="number" id="enteredPrice" placeholder="输入运费金额" />
@@ -167,11 +167,11 @@
             document.getElementById("productData").textContent = data.product || "-";
             document.getElementById("customerData").textContent = data.customer || "-";
             document.getElementById("knownPrice").textContent = data.price || "-";
-            document.getElementById("infoCard").style.display = "block";
+            document.getElementById("resultSection").style.display = "block";
             document.getElementById("result").textContent = "查询成功，请输入金额提交";
           } else {
             document.getElementById("result").textContent = data?.error || "未找到快递单号";
-            document.getElementById("infoCard").style.display = "none";
+            document.getElementById("resultSection").style.display = "none";
           }
         })
         .catch(err => {
@@ -221,7 +221,7 @@
     function clearForm() {
       document.getElementById("trackingNumber").value = "";
       document.getElementById("enteredPrice").value = "";
-      document.getElementById("infoCard").style.display = "none";
+      document.getElementById("resultSection").style.display = "none";
       lastFetchedData = null;
       setTimeout(() => {
         document.getElementById("result").textContent = "";
