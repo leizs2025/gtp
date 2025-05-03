@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>快递与订单录入</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 20px; }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 16px; font-weight: bold; }
+    input, select, button {
+      width: 100%; padding: 12px; font-size: 1rem; margin-top: 5px;
+    }
+    .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+    button.submit { border: none; color: white; border-radius: 6px; }
+    .express { background: #28a745; }
+    .order { background: #007acc; }
+    .clear { background: #999; color: #fff; }
+    button:hover { opacity: 0.9; cursor: pointer; }
+    @media (min-width: 500px) {
+      .btn-group { flex-direction: row; flex-wrap: wrap; }
+      button.submit { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<h2>快递与订单统一录入</h2>
+
+<!-- 统一表单区域 -->
+<label>客户名称</label>
+<select id="customer">
+  <option value="">请选择客户</option>
+  <option value="咪雪">咪雪</option>
+  <option value="annie">annie</option>
+  <option value="hks">hks</option>
+  <option value="JFL">JFL</option>
+  <option value="龙">龙"</option>
+  <option value="惠">惠</option>
+  <option value="姐">姐</option>
+  <option value="阿妹">阿妹</option>
+  <option value="自己">自己</option>
+  <option value="阿新">阿新</option>
+</select>
+
+<label>订单号</label>
+<input type="text" id="orderNumber">
+
+<label>快递单号</label>
+<input type="text" id="trackingNumber">
+
+<label>快递公司</label>
+<select id="company">
+  <option value="">请选择快递公司</option>
+  <option value="顺丰">顺丰</option>
+  <option value="圆通">圆通</option>
+  <option value="中通">中通</option>
+  <option value="申通">申通</option>
+  <option value="邮政">邮政</option>
+  <option value="韵达">韵达</option>
+  <option value="德邦">德邦</option>
+  <option value="安能">安能</option>
+  <option value="极兔">极兔</option>
+  <option value="京广">京广</option>
+  <option value="优速">优速</option>
+  <option value="京东">京东</option>
+  <option value="EMS">EMS</option>
+
+
+
+
+
+</select>
+
+<label>商品名</label>
+<input type="text" id="product">
+
+<label>数量</label>
+<input type="number" id="quantity">
+
+<label>单价</label>
+<input type="number" id="price" step="0.01">
+
+<label>国外段运费</label>
+<input type="number" id="foreignShipping" step="0.01">
+
+<div class="btn-group">
+  <button class="submit express" onclick="submitAsExpress()">📦 提交为快递</button>
+  <button class="submit order" onclick="submitAsOrder()">🧾 提交为订单</button>
+  <button class="submit clear" onclick="clearForm()">🧼 清空表单</button>
+</div>
+
+<script>
+// 替换为你自己的地址
+const EXPRESS_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas3";
+const ORDER_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas4";
+
+function getField(id) {
+  return document.getElementById(id).value.trim();
+}
+
+function parseOrZero(val) {
+  return parseFloat(val) || 0;
+}
+
+function submitAsExpress() {
+  const data = {
+    customer: getField("customer"),
+    orderNumber: getField("orderNumber"),
+    trackingNumber: getField("trackingNumber"),
+    company: getField("company"),
+    product: getField("product")
+  };
+
+  fetch(EXPRESS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  })
+  .then(res => res.json())
+  .then(r => alert(r.message || "快递信息提交成功"))
+  .catch(() => alert("提交失败"));
+}
+
+function submitAsOrder() {
+  const data = {
+    customer: getField("customer"),
+    orderNumber: getField("orderNumber"),
+    trackingNumber: getField("trackingNumber"),
+    product: getField("product"),
+    quantity: getField("quantity"),
+    price: getField("price"),
+    foreignShipping: getField("foreignShipping")
+  };
+
+  const qty = parseOrZero(data.quantity);
+  const price = parseOrZero(data.price);
+  const fee = parseOrZero(data.foreignShipping);
+  const subtotal = qty * price + fee;
+
+  const values = [
+    data.orderNumber,
+    data.trackingNumber,
+    data.product,
+    data.quantity,
+    data.price,
+    data.foreignShipping,
+    subtotal.toFixed(2)
+  ];
+
+  fetch(ORDER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ customer: data.customer, values: values })
+  })
+  .then(res => res.json())
+  .then(r => alert(r.message || "订单信息提交成功"))
+  .catch(() => alert("提交失败"));
+}
+
+function clearForm() {
+  document.querySelectorAll("input, select").forEach(el => el.value = "");
+}
+</script>
+
+</body>
+</html>
