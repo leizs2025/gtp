@@ -61,6 +61,7 @@
       font-weight: bold;
       text-align: center;
       margin-bottom: 10px;
+      font-size: 16px;
     }
     .ticket-summary {
       text-align: right;
@@ -204,9 +205,12 @@ function clearCache() {
   pendingSubmissions = [];
   renderPreview();
   clearForm();
+  document.getElementById("ticketSelector").value = "";
+  renderTicket();
   document.getElementById("ticketPreview").innerHTML = "";
   showStatus("缓存与表单清除成功", "success");
 }
+
 
 function clearForm() {
   document.getElementById("trackingNumber").value = "";
@@ -233,6 +237,7 @@ function submitAll() {
       pendingSubmissions = [];
       renderPreview();
       clearForm();
+      document.getElementById("ticketSelector").value = "";
     } else {
       showStatus("提交失败", "error");
     }
@@ -243,14 +248,17 @@ function submitAll() {
 function renderTicket() {
   const name = document.getElementById("ticketSelector").value;
   const area = document.getElementById("ticketPreview");
-  if (!name) {
+
+  const filtered = pendingSubmissions.filter(r => r.customer === name);
+
+  // 如果未选客户或已无该客户记录，隐藏
+  if (!name || filtered.length === 0) {
     area.innerHTML = "";
     area.style.display = "none";
     return;
   }
-  area.style.display = "block";
 
-  const filtered = pendingSubmissions.filter(r => r.customer === name);
+  area.style.display = "block";
   let total = 0;
   const date = new Date().toLocaleDateString();
 
@@ -286,6 +294,7 @@ function renderTicket() {
   html += `</table>`;
   area.innerHTML = html;
 }
+
 
 
 function downloadTicketAsImage() {
