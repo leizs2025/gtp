@@ -323,15 +323,16 @@
     videoElement.style.display = "block";
     codeReader
       .listVideoInputDevices()
-      .then((videoInputDevices) => {
-        if (videoInputDevices.length === 0) {
+      .then((devices) => {
+        if (devices.length === 0) {
           showStatus("未检测到摄像头", "error");
           return;
         }
 
-        const selectedDeviceId = videoInputDevices[0].deviceId;
+        // 🔍 优先选择后置摄像头
+        let selected = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
 
-        codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, (result, err) => {
+        codeReader.decodeFromVideoDevice(selected.deviceId, videoElement, (result, err) => {
           if (result) {
             codeReader.reset();
             videoElement.style.display = "none";
@@ -346,6 +347,7 @@
       });
   };
 </script>
+
 
 </body>
 </html>
