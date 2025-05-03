@@ -32,8 +32,8 @@
 <select id="customer">
   <option value="">请选择客户</option>
   <option value="咪雪">咪雪</option>
-  <option value="annie">annie</option>
-  <option value="hks">hks</option>
+  <option value="Annie">Annie</option>
+  <option value="HKS">HKS</option>
   <option value="JFL">JFL</option>
   <option value="龙">龙"</option>
   <option value="惠">惠</option>
@@ -136,31 +136,21 @@ function submitAsOrder() {
   const qty = parseOrZero(data.quantity);
   const price = parseOrZero(data.price);
   const fee = parseOrZero(data.foreignShipping);
-  const subtotal = qty * price + fee;
-
-  const values = [
-    data.orderNumber,
-    data.trackingNumber,
-    data.product,
-    data.quantity,
-    data.price,
-    data.foreignShipping,
-    subtotal.toFixed(2)
-  ];
+  data.subtotal = (qty * price + fee).toFixed(2); // ✅ 增加字段
 
   fetch(ORDER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ customer: data.customer, values: values })
+    body: JSON.stringify(data) // ✅ 不要用 {customer, values}
   })
   .then(res => res.json())
   .then(r => alert(r.message || "订单信息提交成功"))
   .catch(() => alert("提交失败"));
 }
-
 function clearForm() {
   document.querySelectorAll("input, select").forEach(el => el.value = "");
 }
+
 </script>
 
 </body>
