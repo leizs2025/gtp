@@ -314,34 +314,36 @@
   }
   </script>
 
-<!-- 🔍扫码功能脚本 -->
-<script type="module">
-  import { BrowserMultiFormatReader } from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.0.10/+esm';
-
+<script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
+<script>
+  const codeReader = new ZXing.BrowserMultiFormatReader();
   const videoElement = document.getElementById("scannerPreview");
-  const codeReader = new BrowserMultiFormatReader();
 
-  window.startScan = async function () {
-    try {
-      videoElement.style.display = "block";
-      const devices = await codeReader.listVideoInputDevices();
-      if (devices.length === 0) {
-        showStatus("未检测到摄像头", "error");
-        return;
-      }
-      const selectedDeviceId = devices[0].deviceId;
-      codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, (result, err, controls) => {
-        if (result) {
-          codeReader.reset();
-          videoElement.style.display = "none";
-          document.getElementById("trackingNumber").value = result.text;
-          queryData();
+  window.startScan = function () {
+    videoElement.style.display = "block";
+    codeReader
+      .listVideoInputDevices()
+      .then((videoInputDevices) => {
+        if (videoInputDevices.length === 0) {
+          showStatus("未检测到摄像头", "error");
+          return;
         }
+
+        const selectedDeviceId = videoInputDevices[0].deviceId;
+
+        codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, (result, err) => {
+          if (result) {
+            codeReader.reset();
+            videoElement.style.display = "none";
+            document.getElementById("trackingNumber").value = result.getText();
+            queryData();
+          }
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        showStatus("扫码初始化失败", "error");
       });
-    } catch (e) {
-      showStatus("扫码初始化失败", "error");
-      console.error(e);
-    }
   };
 </script>
 
