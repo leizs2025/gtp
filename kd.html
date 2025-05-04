@@ -5,35 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>快递与订单录入</title>
   <style>
-    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 20px; }
-    h2 { text-align: center; }
-    label { display: block; margin-top: 16px; font-weight: bold; }
-    input, select, button {
-      width: 100%; padding: 12px; font-size: 1rem; margin-top: 5px;
-    }
-    .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
-    button.submit { border: none; color: white; border-radius: 6px; }
-    .express { background: #28a745; }
-    .order { background: #007acc; }
-    .clear { background: #999; color: #fff; }
-    button:hover { opacity: 0.9; cursor: pointer; }
-    @media (min-width: 500px) {
-      .btn-group { flex-direction: row; flex-wrap: wrap; }
-      button.submit { flex: 1; }
-    }
-   
-    .input-row {
-  display: flex;
-  gap: 20px;
+body {
+  font-family: sans-serif;
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+  background-color: #f2f2f2; /* ✅ 浅灰背景 */
+}
+
+h2 {
+  text-align: center;
+}
+
+label {
+  display: block;
   margin-top: 16px;
-  flex-wrap: wrap;
+  font-weight: bold;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  margin-top: 5px;
+  box-sizing: border-box;
 }
 
 .input-group {
-  flex: 1 1 0;
-  min-width: 180px;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .input-group input,
@@ -45,7 +47,6 @@
   height: 42px;
   appearance: none;
   background-color: #fff;
-  box-sizing: border-box;
   width: 100%;
 }
 
@@ -57,12 +58,77 @@
   padding-right: 30px;
 }
 
+/* ✅ 行容器，用于 2栏或3栏 */
+.input-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+/* ✅ 专用于数量/单价/运费行 */
+.input-row.fix-three .input-group {
+  flex: 1 1 33.33%;
+  min-width: 0;
+}
+
+/* ✅ 按钮区域 */
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+button.submit {
+  border: none;
+  color: white;
+  border-radius: 6px;
+}
+
+.express { background: #28a745; }
+.order { background: #007acc; }
+.clear { background: #999; color: #fff; }
+
+button:hover {
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+/* ✅ 响应式按钮布局 */
+@media (min-width: 500px) {
+  .btn-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  button.submit {
+    flex: 1;
+  }
+}
+
+/* ✅ 表单卡片外框 */
+.form-container {
+  max-width: 540px;
+  margin: auto;
+  background: #fffdf7;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.input-row.three-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
 
   </style>
 </head>
 <body>
-
-<h2>快递与订单统一录入</h2>
+  <div class="form-container">
+<h2>📦 快递与订单统一录入</h2>
 
 <div class="input-row">
   <div class="input-group">
@@ -122,21 +188,24 @@
   </div>
 </div>
 
-<div class="input-row">
+<div class="input-row three-cols">
   <div class="input-group">
     <label for="quantity">数量</label>
     <input type="number" id="quantity">
   </div>
   <div class="input-group">
     <label for="price">单价</label>
-    <input type="number" id="price" step="0.01">
+    <input type="number" id="price">
   </div>
   <div class="input-group">
     <label for="foreignShipping">国外段运费</label>
-    <input type="number" id="foreignShipping" step="0.01">
+    <input type="number" id="foreignShipping">
   </div>
 </div>
 
+<div id="summary" style="margin-top: 18px; font-weight: bold; text-align: right;">
+  小计: <span id="subtotal">0.00</span>  | 总计: <span id="total">0.00</span> 
+</div>
 
 
 <div class="btn-group">
@@ -157,6 +226,27 @@ function getField(id) {
 function parseOrZero(val) {
   return parseFloat(val) || 0;
 }
+
+function updateSummary() {
+  const quantity = parseOrZero(getField("quantity"));
+  const price = parseOrZero(getField("price"));
+  const fee = parseOrZero(getField("foreignShipping"));
+  const customer = getField("customer");
+
+  const subtotal = quantity * price + fee;
+
+  const markupMap = {
+    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.00,
+    "龙": 0.00, "惠": 0.00, "姐": 0.00, "阿妹": 0.00,
+    "自己": 0.00, "阿新": 0.00
+  };
+  const markupRate = markupMap[customer] || 0;
+  const total = (subtotal / 1.60) * (1 + markupRate);
+
+  document.getElementById("subtotal").textContent = subtotal.toFixed(2);
+  document.getElementById("total").textContent = total.toFixed(2);
+}
+
 
 function submitAsExpress() {
   const data = {
@@ -228,9 +318,17 @@ function submitAsOrder() {
 
 function clearForm() {
   document.querySelectorAll("input, select").forEach(el => el.value = "");
+  updateSummary(); // 💡 清空后立即更新显示为 0
 }
 
+// 监听用户输入变化，实时刷新小计和总计
+["quantity", "price", "foreignShipping", "customer"].forEach(id => {
+  document.getElementById(id).addEventListener("input", updateSummary);
+  document.getElementById(id).addEventListener("change", updateSummary);
+});
+
 </script>
+</div>
 
 </body>
 </html>
