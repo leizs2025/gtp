@@ -21,68 +21,123 @@
       .btn-group { flex-direction: row; flex-wrap: wrap; }
       button.submit { flex: 1; }
     }
+   
+    .input-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.input-group {
+  flex: 1 1 0;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group input,
+.input-group select {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  height: 42px;
+  appearance: none;
+  background-color: #fff;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.input-group select {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="5"><polygon points="0,0 10,0 5,5" fill="%23333"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px 5px;
+  padding-right: 30px;
+}
+
+
   </style>
 </head>
 <body>
 
 <h2>快递与订单统一录入</h2>
 
-<!-- 统一表单区域 -->
-<label>客户名称</label>
-<select id="customer">
-  <option value="">请选择客户</option>
-  <option value="咪雪">咪雪</option>
-  <option value="Annie">Annie</option>
-  <option value="HKS">HKS</option>
-  <option value="JFL">JFL</option>
-  <option value="龙">龙"</option>
-  <option value="惠">惠</option>
-  <option value="姐">姐</option>
-  <option value="阿妹">阿妹</option>
-  <option value="自己">自己</option>
-  <option value="阿新">阿新</option>
-</select>
-
-<label>订单号</label>
-<input type="text" id="orderNumber">
-
-<label>快递单号</label>
-<input type="text" id="trackingNumber">
-
-<label>快递公司</label>
-<select id="company">
-  <option value="">请选择快递公司</option>
-  <option value="顺丰">顺丰</option>
-  <option value="圆通">圆通</option>
-  <option value="中通">中通</option>
-  <option value="申通">申通</option>
-  <option value="邮政">邮政</option>
-  <option value="韵达">韵达</option>
-  <option value="德邦">德邦</option>
-  <option value="安能">安能</option>
-  <option value="极兔">极兔</option>
-  <option value="京广">京广</option>
-  <option value="优速">优速</option>
-  <option value="京东">京东</option>
-  <option value="EMS">EMS</option>
+<div class="input-row">
+  <div class="input-group">
+    <label for="orderNumber">订单号</label>
+    <input type="text" id="orderNumber">
+  </div>
+  <div class="input-group">
+    <label for="customer">客户名称</label>
+    <select id="customer">
+      <option value="">请选择客户</option>
+      <option value="咪雪">咪雪</option>
+      <option value="Annie">Annie</option>
+      <option value="HKS">HKS</option>
+      <option value="JFL">JFL</option>
+      <option value="龙">龙</option>
+      <option value="惠">惠</option>
+      <option value="姐">姐</option>
+      <option value="阿妹">阿妹</option>
+      <option value="自己">自己</option>
+      <option value="阿新">阿新</option>
+    </select>
+  </div>
+</div>
 
 
+<div class="input-row">
+  <div class="input-group">
+    <label for="trackingNumber">快递单号</label>
+    <input type="text" id="trackingNumber">
+  </div>
+  <div class="input-group">
+    <label for="company">快递公司</label>
+    <select id="company">
+      <option value="">请选择快递公司</option>
+      <option value="顺丰">顺丰</option>
+      <option value="圆通">圆通</option>
+      <option value="中通">中通</option>
+      <option value="申通">申通</option>
+      <option value="邮政">邮政</option>
+      <option value="韵达">韵达</option>
+      <option value="德邦">德邦</option>
+      <option value="安能">安能</option>
+      <option value="极兔">极兔</option>
+      <option value="京广">京广</option>
+      <option value="优速">优速</option>
+      <option value="京东">京东</option>
+      <option value="EMS">EMS</option>
+    </select>
+  </div>
+</div>
 
 
+<div class="input-row">
+  <div class="input-group">
+    <label for="product">商品名</label>
+    <input type="text" id="product">
+  </div>
+</div>
 
-</select>
+<div class="input-row">
+  <div class="input-group">
+    <label for="quantity">数量</label>
+    <input type="number" id="quantity">
+  </div>
+  <div class="input-group">
+    <label for="price">单价</label>
+    <input type="number" id="price" step="0.01">
+  </div>
+  <div class="input-group">
+    <label for="foreignShipping">国外段运费</label>
+    <input type="number" id="foreignShipping" step="0.01">
+  </div>
+</div>
 
-<label>商品名</label>
-<input type="text" id="product">
 
-<label>数量</label>
-<input type="number" id="quantity">
-
-<label>单价</label>
-<input type="number" id="price" step="0.01">
-
-<label>国外段运费</label>
-<input type="number" id="foreignShipping" step="0.01">
 
 <div class="btn-group">
   <button class="submit express" onclick="submitAsExpress()">📦 提交为快递</button>
@@ -136,17 +191,41 @@ function submitAsOrder() {
   const qty = parseOrZero(data.quantity);
   const price = parseOrZero(data.price);
   const fee = parseOrZero(data.foreignShipping);
-  data.subtotal = (qty * price + fee).toFixed(2); // ✅ 增加字段
+  const subtotal = qty * price + fee;
+  data.subtotal = subtotal.toFixed(2);
+
+  // 👇 客户加价比例
+  const markupMap = {
+    "咪雪": 0.10,
+    "Annie": 0.19,
+    "HKS": 0.16,
+    "JFL": 0.00,
+    "龙": 0.00,
+    "惠": 0.00,
+    "姐": 0.00,
+    "阿妹": 0.00,
+    "自己": 0.00,
+    "阿新": 0.00
+  };
+  const markupRate = markupMap[data.customer] || 0;
+  const total = (subtotal / 1.60) * (1 + markupRate);
+  data.total = total.toFixed(2);
+
+  // 👌 纯数字确认信息
+  if (!confirm(`确认提交订单？\n数量: ${qty} × 单价: ${price}\n运费: ${fee}\n\n小计: ${data.subtotal}\n折算总计: ${data.total}`)) {
+    return;
+  }
 
   fetch(ORDER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data) // ✅ 不要用 {customer, values}
+    body: JSON.stringify(data)
   })
   .then(res => res.json())
   .then(r => alert(r.message || "订单信息提交成功"))
   .catch(() => alert("提交失败"));
 }
+
 function clearForm() {
   document.querySelectorAll("input, select").forEach(el => el.value = "");
 }
