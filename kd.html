@@ -238,9 +238,9 @@ function updateSummary() {
   const subtotal = quantity * price + fee;
 
   const markupMap = {
-    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.00,
-    "龙": 0.00, "惠": 0.00, "姐": 0.00, "阿妹": 0.00,
-    "自己": 0.00, "阿新": 0.00
+    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+    "自己": 0.00, "阿新": 0.00,"闺蜜": 0.15,
   };
   const markupRate = markupMap[customer] || 0;
   const total = (subtotal / 1.60) * (1 + markupRate);
@@ -249,6 +249,14 @@ function updateSummary() {
   document.getElementById("total").textContent = total.toFixed(2);
 }
 
+function calculateTotal(quantity, price, foreignShipping, customer) {
+  const subtotal = quantity * price + foreignShipping;
+
+  return {
+    subtotal: subtotal.toFixed(2),
+    total: total.toFixed(2)
+  };
+}
 
 function submitAsExpress() {
   const data = {
@@ -259,11 +267,19 @@ function submitAsExpress() {
     product: getField("product")
   };
 
+  // 👇 新增 total 字段
+  const qty = parseOrZero(getField("quantity"));
+  const price = parseOrZero(getField("price"));
+  const fee = parseOrZero(getField("foreignShipping"));
+  const { total } = calculateTotal(qty, price, fee, data.customer);
+  data.total = total;
+
   fetch(EXPRESS_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   })
+
   .then(res => res.json())
   .then(r => alert(r.message || "快递信息提交成功"))
   .catch(() => alert("提交失败"));
@@ -283,30 +299,17 @@ function submitAsOrder() {
   const qty = parseOrZero(data.quantity);
   const price = parseOrZero(data.price);
   const fee = parseOrZero(data.foreignShipping);
-  const subtotal = qty * price + fee;
-  data.subtotal = subtotal.toFixed(2);
 
-  // 👇 客户加价比例
-  const markupMap = {
-    "咪雪": 0.10,
-    "Annie": 0.19,
-    "HKS": 0.16,
-    "JFL": 0.00,
-    "龙": 0.00,
-    "惠": 0.00,
-    "姐": 0.00,
-    "阿妹": 0.00,
-    "自己": 0.00,
-    "阿新": 0.00
-  };
-  const markupRate = markupMap[data.customer] || 0;
-  const total = (subtotal / 1.60) * (1 + markupRate);
-  data.total = total.toFixed(2);
+  // ✅ 替换为公共计算函数
+  const { subtotal, total } = calculateTotal(qty, price, fee, data.customer);
+  data.subtotal = subtotal;
+  data.total = total;
 
   // 👌 纯数字确认信息
   if (!confirm(`确认提交订单？\n数量: ${qty} × 单价: ${price}\n运费: ${fee}\n\n小计: ${data.subtotal}\n折算总计: ${data.total}`)) {
     return;
   }
+
 
   fetch(ORDER_URL, {
     method: "POST",
