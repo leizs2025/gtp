@@ -252,6 +252,15 @@ function updateSummary() {
 function calculateTotal(quantity, price, foreignShipping, customer) {
   const subtotal = quantity * price + foreignShipping;
 
+  const markupMap = {
+    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15,
+  };
+
+  const markupRate = markupMap[customer] || 0;
+  const total = (subtotal / 1.6) * (1 + markupRate);
+
   return {
     subtotal: subtotal.toFixed(2),
     total: total.toFixed(2)
