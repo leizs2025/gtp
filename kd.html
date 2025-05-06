@@ -1,272 +1,285 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>快递与订单录入</title>
   <style>
-body {
-  font-family: sans-serif;
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-  background-color: #f2f2f2; /* ✅ 浅灰背景 */
-}
-
-h2 {
-  text-align: center;
-  font-size: 22px;
-}
-
-label {
-  display: block;
-  margin-top: 16px;
-  font-weight: bold;
-}
-
-input, select, button {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  margin-top: 5px;
-  box-sizing: border-box;
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.input-group input,
-.input-group select {
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  height: 42px;
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      background-color: #f2f2f2;
+    }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 16px; font-weight: bold; }
+    input, select, button {
+      width: 100%; padding: 12px; font-size: 1rem; margin-top: 5px; box-sizing: border-box;
+    }
+    .input-group { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .input-row { display: flex; gap: 16px; width: 100%; flex-wrap: wrap; box-sizing: border-box; }
+    .input-group input, .input-group select {
   appearance: none;
-  background-color: #fff;
-  width: 100%;
-}
-
-.input-group select {
-  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="5"><polygon points="0,0 10,0 5,5" fill="%23333"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 10px 5px;
-  padding-right: 30px;
-}
-
-/* ✅ 行容器，用于 2栏或3栏 */
-.input-row {
-  display: flex;
-  gap: 16px;
-  width: 100%;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+      padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;
+      height: 42px; background-color: #fff;
+    }
+    .input-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+      background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="5"><polygon points="0,0 10,0 5,5" fill="%23333"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 10px 5px;
+      padding-right: 30px;
+    }
+    .input-row.three-cols {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .btn-group {
+  justify-content: space-around;
   flex-wrap: wrap;
-  box-sizing: border-box;
-}
-
-/* ✅ 专用于数量/单价/运费行 */
-.input-row.fix-three .input-group {
-  flex: 1 1 33.33%;
-  min-width: 0;
-}
-
-/* ✅ 按钮区域 */
-.btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-button.submit {
-  border: none;
-  color: white;
-  border-radius: 6px;
-}
-
-.express { background: #28a745; }
-.order { background: #007acc; }
-.clear { background: #999; color: #fff; }
-
-button:hover {
-  opacity: 0.9;
-  cursor: pointer;
-}
-
-/* ✅ 响应式按钮布局 */
-@media (min-width: 500px) {
-  .btn-group {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  button.submit {
-    flex: 1;
-  }
-}
-
-/* ✅ 表单卡片外框 */
-.form-container {
-  max-width: 540px;
-  margin: auto;
-  background: #fffdf7;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.input-row.three-cols {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    button.submit {
+  font-size: 1.1rem;
+  padding: 6px 10px;
+  width: auto;
+  min-width: 42px;
+      border: none;
+      color: white;
+      border-radius: 6px;
+    }
+    .express { background: #28a745; }
+    .order { background: #007acc; }
+    .clear { background: #999; color: #fff; }
+    button:hover { opacity: 0.9; cursor: pointer; }
+    @media (min-width: 500px) {
+      .btn-group {
+  justify-content: space-around;
+  flex-wrap: wrap; flex-direction: row; flex-wrap: wrap; }
+      button.submit {
+  font-size: 1.1rem;
+  padding: 6px 10px;
+  width: auto;
+  min-width: 42px; flex: 1; }
+    }
+    .form-container {
+      max-width: 640px;
+      margin: auto;
+      background: #fffdf7;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .modal-mask {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-box {
+      background: #fff;
+      padding: 24px;
+      border-radius: 10px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
   </style>
+
+<style>
+  .clear-icon {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10;
+    color: #888;
+  }
+  .clear-icon:hover {
+    color: #d33;
+  }
+  .form-wrapper {
+    position: relative;
+  }
+</style>
+
 </head>
 <body>
+  <div class="form-wrapper">
+  <div class="clear-icon" onclick="clearForm()" title="清空表单">🧹</div>
   <div class="form-container">
-<h2>📦 快递与订单统一录入</h2>
-
-<div class="input-row">
-  <div class="input-group">
-    <label for="orderNumber">订单号</label>
-    <input type="text" id="orderNumber">
+    <h2>📦 快递与订单统一录入</h2>
+    <div class="input-row">
+      <div class="input-group">
+        <label for="orderNumber">订单号</label>
+        <input type="text" id="orderNumber">
+      </div>
+      <div class="input-group">
+        <label for="customer">客户名称</label>
+        <select id="customer">
+          <option value="">请选择客户</option>
+          <option value="咪雪">咪雪</option>
+          <option value="Annie">Annie</option>
+          <option value="HKS">HKS</option>
+          <option value="JFL">JFL</option>
+          <option value="龙">龙</option>
+          <option value="惠">惠</option>
+          <option value="姐">姐</option>
+          <option value="阿妹">阿妹</option>
+          <option value="自己">自己</option>
+          <option value="阿新">阿新</option>
+          <option value="闺蜜">闺蜜</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label for="trackingNumber">快递单号</label>
+        <input type="text" id="trackingNumber">
+      </div>
+      <div class="input-group">
+        <label for="company">快递公司</label>
+        <select id="company">
+          <option value="">请选择快递公司</option>
+          <option value="顺丰">顺丰</option>
+          <option value="圆通">圆通</option>
+          <option value="中通">中通</option>
+          <option value="申通">申通</option>
+          <option value="邮政">邮政</option>
+          <option value="韵达">韵达</option>
+          <option value="德邦">德邦</option>
+          <option value="安能">安能</option>
+          <option value="极兔">极兔</option>
+          <option value="京广">京广</option>
+          <option value="优速">优速</option>
+          <option value="京东">京东</option>
+          <option value="EMS">EMS</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label for="product">商品名</label>
+        <input type="text" id="product">
+      </div>
+    </div>
+    <div class="input-row three-cols">
+      <div class="input-group">
+        <label for="quantity">数量</label>
+        <input type="number" id="quantity">
+      </div>
+      <div class="input-group">
+        <label for="price">单价</label>
+        <input type="number" id="price">
+      </div>
+      <div class="input-group">
+        <label for="foreignShipping">快递费</label>
+        <input type="number" id="foreignShipping">
+      </div>
+    </div>
+  <div id="summary" style="margin-top: 18px; font-weight: bold; text-align: right;">
+    小计: <span id="subtotal">0.00</span>  | 总计: <span id="total">0.00</span>
   </div>
-  <div class="input-group">
-    <label for="customer">客户名称</label>
-    <select id="customer">
-      <option value="">请选择客户</option>
-      <option value="咪雪">咪雪</option>
-      <option value="Annie">Annie</option>
-      <option value="HKS">HKS</option>
-      <option value="JFL">JFL</option>
-      <option value="龙">龙</option>
-      <option value="惠">惠</option>
-      <option value="姐">姐</option>
-      <option value="阿妹">阿妹</option>
-      <option value="自己">自己</option>
-      <option value="阿新">阿新</option>
-      <option value="闺蜜">闺蜜</option>
-    </select>
+  <div class="btn-group">
+    <button class="submit" title="缓存快递" onclick="cacheExpress()">💾</button>
+    <button class="submit" title="查看快递缓存" onclick="previewExpressCache()">👁️</button>
+    <button class="submit" title="缓存订单" onclick="cacheOrder()">💾</button>
+    <button class="submit" title="查看订单缓存" onclick="previewOrderCache()">👁️</button>
+   </div>
+  <div class="btn-group">
+    <button class="submit" title="上传订单草稿" onclick="uploadCachedOrders()">📤</button>
+    <button class="submit" title="下载订单草稿" onclick="downloadCachedOrders()">📥</button>
+    <button class="submit" title="上传快递草稿" onclick="uploadCachedExpress()">📤</button>
+    <button class="submit" title="下载快递草稿" onclick="downloadCachedExpress()">📥</button>
   </div>
 </div>
-
-
-<div class="input-row">
-  <div class="input-group">
-    <label for="trackingNumber">快递单号</label>
-    <input type="text" id="trackingNumber">
+<!-- ✅ 快递缓存弹窗 -->
+  <div id="expressCacheModal" class="modal-mask">
+    <div class="modal-box">
+      <h3>📦 缓存快递预览</h3>
+      <form id="expressCacheForm">
+        <ul id="expressCacheList" style="list-style:none; padding-left:0;"></ul>
+        <div style="margin-top:20px; text-align:right;">
+          <button type="button" onclick="submitSelectedExpresses()">✅ 提交所选</button>
+          <button type="button" onclick="closeExpressModal()">关闭</button>
+        </div>
+      </form>
+    </div>
   </div>
-  <div class="input-group">
-    <label for="company">快递公司</label>
-    <select id="company">
-      <option value="">请选择快递公司</option>
-      <option value="顺丰">顺丰</option>
-      <option value="圆通">圆通</option>
-      <option value="中通">中通</option>
-      <option value="申通">申通</option>
-      <option value="邮政">邮政</option>
-      <option value="韵达">韵达</option>
-      <option value="德邦">德邦</option>
-      <option value="安能">安能</option>
-      <option value="极兔">极兔</option>
-      <option value="京广">京广</option>
-      <option value="优速">优速</option>
-      <option value="京东">京东</option>
-      <option value="EMS">EMS</option>
-    </select>
+  <!-- ✅ 订单缓存弹窗 -->
+  <div id="orderCacheModal" class="modal-mask">
+    <div class="modal-box">
+      <h3>🧾 缓存订单预览</h3>
+      <form id="orderCacheForm">
+        <ul id="orderCacheList" style="list-style:none; padding-left:0;"></ul>
+        <div style="margin-top:20px; text-align:right;">
+          <button type="button" onclick="submitSelectedOrders()">✅ 提交所选</button>
+          <button type="button" onclick="closeOrderModal()">关闭</button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
-
-
-<div class="input-row">
-  <div class="input-group">
-    <label for="product">商品名</label>
-    <input type="text" id="product">
-  </div>
-</div>
-
-<div class="input-row three-cols">
-  <div class="input-group">
-    <label for="quantity">数量</label>
-    <input type="number" id="quantity">
-  </div>
-  <div class="input-group">
-    <label for="price">单价</label>
-    <input type="number" id="price">
-  </div>
-  <div class="input-group">
-    <label for="foreignShipping">快递费</label>
-    <input type="number" id="foreignShipping">
-  </div>
-</div>
-
-<div id="summary" style="margin-top: 18px; font-weight: bold; text-align: right;">
-  小计: <span id="subtotal">0.00</span>  | 总计: <span id="total">0.00</span> 
-</div>
-
-
-<div class="btn-group">
-  <button class="submit express" onclick="submitAsExpress()">📦 提交快递</button>
-  <button class="submit order" onclick="submitAsOrder()">🧾 提交订单</button>
-  <button class="submit clear" onclick="clearForm()">🧼 清空表单</button>
-</div>
-
-<script>
-// 替换为你自己的地址
+  <script>
 const EXPRESS_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas3";
 const ORDER_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas4";
-
 function getField(id) {
-  return document.getElementById(id).value.trim();
+  return document.getElementById(id)?.value.trim() || '';
 }
-
+function setField(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
 function parseOrZero(val) {
   return parseFloat(val) || 0;
 }
-
-function updateSummary() {
-  const quantity = parseOrZero(getField("quantity"));
-  const price = parseOrZero(getField("price"));
-  const fee = parseOrZero(getField("foreignShipping"));
-  const customer = getField("customer");
-
-  const subtotal = quantity * price + fee;
-
-  const markupMap = {
-    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-    "自己": 0.00, "阿新": 0.00,"闺蜜": 0.15,
-  };
-  const markupRate = markupMap[customer] || 0;
-  const total = (subtotal / 1.60) * (1 + markupRate);
-
-  document.getElementById("subtotal").textContent = subtotal.toFixed(2);
-  document.getElementById("total").textContent = total.toFixed(2);
-}
-
 function calculateTotal(quantity, price, foreignShipping, customer) {
   const subtotal = quantity * price + foreignShipping;
-
   const markupMap = {
     "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
     "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15,
+    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
   };
-
   const markupRate = markupMap[customer] || 0;
   const total = (subtotal / 1.6) * (1 + markupRate);
-
   return {
     subtotal: subtotal.toFixed(2),
     total: total.toFixed(2)
   };
 }
-
+function updateSummary() {
+  const quantity = parseOrZero(getField("quantity"));
+  const price = parseOrZero(getField("price"));
+  const fee = parseOrZero(getField("foreignShipping"));
+  const customer = getField("customer");
+  const subtotal = quantity * price + fee;
+  const markupMap = {
+    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+  };
+  const markupRate = markupMap[customer] || 0;
+  const total = (subtotal / 1.6) * (1 + markupRate);
+  document.getElementById("subtotal").textContent = subtotal.toFixed(2);
+  document.getElementById("total").textContent = total.toFixed(2);
+}
 function submitAsExpress() {
   const data = {
     customer: getField("customer"),
@@ -275,25 +288,20 @@ function submitAsExpress() {
     company: getField("company"),
     product: getField("product")
   };
-
-  // 👇 新增 total 字段
   const qty = parseOrZero(getField("quantity"));
   const price = parseOrZero(getField("price"));
   const fee = parseOrZero(getField("foreignShipping"));
   const { total } = calculateTotal(qty, price, fee, data.customer);
   data.total = total;
-
   fetch(EXPRESS_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   })
-
   .then(res => res.json())
   .then(r => alert(r.message || "快递信息提交成功"))
   .catch(() => alert("提交失败"));
 }
-
 function submitAsOrder() {
   const data = {
     customer: getField("customer"),
@@ -304,22 +312,17 @@ function submitAsOrder() {
     price: getField("price"),
     foreignShipping: getField("foreignShipping")
   };
-
   const qty = parseOrZero(data.quantity);
   const price = parseOrZero(data.price);
   const fee = parseOrZero(data.foreignShipping);
-
-  // ✅ 替换为公共计算函数
   const { subtotal, total } = calculateTotal(qty, price, fee, data.customer);
   data.subtotal = subtotal;
   data.total = total;
-
-  // 👌 纯数字确认信息
-  if (!confirm(`确认提交订单？\n数量: ${qty} × 单价: ${price}\n运费: ${fee}\n\n小计: ${data.subtotal}\n折算总计: ${data.total}`)) {
-    return;
-  }
-
-
+  if (!confirm(`确认提交订单？
+数量: ${qty} × 单价: ${price}
+运费: ${fee}
+小计: ${data.subtotal}
+折算总计: ${data.total}`)) return;
   fetch(ORDER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -329,20 +332,305 @@ function submitAsOrder() {
   .then(r => alert(r.message || "订单信息提交成功"))
   .catch(() => alert("提交失败"));
 }
-
 function clearForm() {
   document.querySelectorAll("input, select").forEach(el => el.value = "");
-  updateSummary(); // 💡 清空后立即更新显示为 0
+  updateSummary();
 }
-
-// 监听用户输入变化，实时刷新小计和总计
 ["quantity", "price", "foreignShipping", "customer"].forEach(id => {
   document.getElementById(id).addEventListener("input", updateSummary);
   document.getElementById(id).addEventListener("change", updateSummary);
 });
-
+const ORDER_CACHE_KEY = "orderCache";
+const EXPRESS_CACHE_KEY = "expressCache";
+function cacheOrder() {
+  const data = {
+    customer: getField("customer"),
+    orderNumber: getField("orderNumber"),
+    trackingNumber: getField("trackingNumber"),
+    product: getField("product"),
+    quantity: getField("quantity"),
+    price: getField("price"),
+    foreignShipping: getField("foreignShipping")
+  };
+  let list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+  list.push(data);
+  localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(list));
+  alert("已缓存当前订单 ✅");
+}
+function previewOrderCache() {
+  const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+  const container = document.getElementById("orderCacheList");
+  if (!list.length) return alert("暂无缓存订单");
+  container.innerHTML = list.map((item, i) => `
+    <li>
+      <label><input type='checkbox' name='orderIndex' value='${i}'>
+      订单: ${item.orderNumber} (${item.customer})</label>
+      <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
+      <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
+    </li>`).join("");
+  document.getElementById("orderCacheModal").style.display = "flex";
+}
+function closeOrderModal() {
+  document.getElementById("orderCacheModal").style.display = "none";
+}
+function submitSelectedOrders() {
+  const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
+  let list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+  let success = [];
+  let promises = selected.map(i => {
+    const item = list[i];
+    const { subtotal, total } = calculateTotal(parseOrZero(item.quantity), parseOrZero(item.price), parseOrZero(item.foreignShipping), item.customer);
+    return fetch(ORDER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...item, subtotal, total })
+    }).then(res => res.json()).then(r => {
+      if (r.message?.includes("成功")) success.push(i);
+    });
+  });
+  Promise.all(promises).then(() => {
+    list = list.filter((_, i) => !success.includes(i));
+    localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(list));
+    closeOrderModal();
+    alert(`成功提交 ${success.length} 条订单 ✅`);
+  });
+}
+function deleteOrderCache(index) {
+  let list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+  list.splice(index, 1);
+  localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(list));
+  previewOrderCache();
+}
+function editOrderCache(index) {
+  const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+  const item = list[index];
+  if (!item) return;
+  setField("customer", item.customer);
+  setField("orderNumber", item.orderNumber);
+  setField("trackingNumber", item.trackingNumber);
+  setField("product", item.product);
+  setField("quantity", item.quantity);
+  setField("price", item.price);
+  setField("foreignShipping", item.foreignShipping);
+  deleteOrderCache(index);
+  closeOrderModal();
+}
+function cacheExpress() {
+  const data = {
+    customer: getField("customer"),
+    orderNumber: getField("orderNumber"),
+    trackingNumber: getField("trackingNumber"),
+    company: getField("company"),
+    product: getField("product"),
+    quantity: getField("quantity"),
+    price: getField("price"),
+    foreignShipping: getField("foreignShipping")
+  };
+  let list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+  list.push(data);
+  localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(list));
+  alert("快递信息已缓存 ✅");
+}
+function previewExpressCache() {
+  const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+  const container = document.getElementById("expressCacheList");
+  if (!list.length) return alert("暂无缓存快递");
+  container.innerHTML = list.map((item, i) => `
+    <li>
+      <label><input type='checkbox' name='expressIndex' value='${i}'>
+      快递: ${item.trackingNumber} (${item.customer})</label>
+      <button type='button' onclick='editExpressCache(${i})'>✏️ 修改</button>
+      <button type='button' onclick='deleteExpressCache(${i})'>🗑️ 删除</button>
+    </li>`).join("");
+  document.getElementById("expressCacheModal").style.display = "flex";
+}
+function closeExpressModal() {
+  document.getElementById("expressCacheModal").style.display = "none";
+}
+function submitSelectedExpresses() {
+  const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
+  let list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+  let success = [];
+  let promises = selected.map(i => {
+    const item = list[i];
+    const { total } = calculateTotal(parseOrZero(item.quantity), parseOrZero(item.price), parseOrZero(item.foreignShipping), item.customer);
+    return fetch(EXPRESS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...item, total })
+    }).then(res => res.json()).then(r => {
+      if (r.message?.includes("成功")) success.push(i);
+    });
+  });
+  Promise.all(promises).then(() => {
+    list = list.filter((_, i) => !success.includes(i));
+    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(list));
+    closeExpressModal();
+    alert(`成功提交 ${success.length} 条快递 ✅`);
+  });
+}
+function deleteExpressCache(index) {
+  let list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+  list.splice(index, 1);
+  localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(list));
+  previewExpressCache();
+}
+function editExpressCache(index) {
+  const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+  const item = list[index];
+  if (!item) return;
+  setField("customer", item.customer);
+  setField("orderNumber", item.orderNumber);
+  setField("trackingNumber", item.trackingNumber);
+  setField("company", item.company);
+  setField("product", item.product);
+  setField("quantity", item.quantity);
+  setField("price", item.price);
+  setField("foreignShipping", item.foreignShipping);
+  deleteExpressCache(index);
+  closeExpressModal();
+}
+function exportCache(key) {
+  const data = localStorage.getItem(key) || "[]";
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${key}.json`;
+  a.click();
+}
+function importCache(event, key) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) throw new Error("文件格式不正确");
+      const existing = JSON.parse(localStorage.getItem(key) || "[]");
+      const merged = existing.concat(imported);
+      localStorage.setItem(key, JSON.stringify(merged));
+      alert(`导入成功，共合并 ${imported.length} 条记录 ✅`);
+    } catch (err) {
+      alert("导入失败：" + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+function uploadCachedOrders() {
+  const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+  if (!list.length) return alert("没有订单草稿");
+  fetch(ORDER_URL + "?uploadCache=1", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(list)
+  }).then(res => res.json()).then(r => alert(r.message || "订单草稿上传成功 ✅"))
+    .catch(() => alert("上传失败"));
+}
+function uploadCachedExpress() {
+  const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+  if (!list.length) return alert("没有快递草稿");
+  fetch(EXPRESS_URL + "?uploadCache=1", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(list)
+  }).then(res => res.json()).then(r => alert(r.message || "快递草稿上传成功 ✅"))
+    .catch(() => alert("上传失败"));
+}
+function downloadCachedOrders() {
+  fetch(ORDER_URL + "?downloadCache=1")
+    .then(res => res.json())
+    .then(list => {
+      const local = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+      const merged = local.concat(list);
+      localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(merged));
+      alert(`已下载 ${list.length} 条订单草稿 ✅`);
+    }).catch(() => alert("下载失败"));
+}
+function downloadCachedExpress() {
+  fetch(EXPRESS_URL + "?downloadCache=1")
+    .then(res => res.json())
+    .then(list => {
+      const local = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+      const merged = local.concat(list);
+      localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(merged));
+      alert(`已下载 ${list.length} 条快递草稿 ✅`);
+    }).catch(() => alert("下载失败"));
+}
+function submitAllOrderCache() {
+  const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+  if (!cache.length) return alert("没有可提交的订单缓存");
+  const promises = cache.map(item => {
+    const { subtotal, total } = calculateTotal(
+      parseOrZero(item.quantity),
+      parseOrZero(item.price),
+      parseOrZero(item.foreignShipping),
+      item.customer
+    );
+    const payload = {
+      customer: item.customer,
+      values: [
+        item.customer,
+        item.orderNumber,
+        item.trackingNumber,
+        item.product,
+        item.quantity,
+        item.price,
+        item.foreignShipping,
+        subtotal,
+        total
+      ]
+    };
+    return fetch(ORDER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  });
+  Promise.all(promises).then(() => {
+    localStorage.removeItem(ORDER_CACHE_KEY);
+    fetch(ORDER_URL + "?clearDraft=1").then(() => {
+      alert("✅ 所有订单已批量提交并清除缓存");
+    });
+  });
+}
+function submitAllExpressCache() {
+  const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+  if (!cache.length) return alert("没有可提交的快递缓存");
+  const promises = cache.map(item => {
+    const { total } = calculateTotal(
+      parseOrZero(item.quantity),
+      parseOrZero(item.price),
+      parseOrZero(item.foreignShipping),
+      item.customer
+    );
+    const payload = {
+      customer: item.customer,
+      values: [
+        item.customer,
+        item.orderNumber,
+        item.trackingNumber,
+        item.company,
+        item.product,
+        item.quantity,
+        item.price,
+        item.foreignShipping,
+        total
+      ]
+    };
+    return fetch(EXPRESS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  });
+  Promise.all(promises).then(() => {
+    localStorage.removeItem(EXPRESS_CACHE_KEY);
+    fetch(EXPRESS_URL + "?clearDraft=1").then(() => {
+      alert("✅ 所有快递已批量提交并清除缓存");
+    });
+  });
+}
 </script>
-</div>
-
 </body>
 </html>
