@@ -41,14 +41,12 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
     }
-    .btn-group {
-  justify-content: space-around;
-  flex-wrap: wrap;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 24px;
-    }
+.btn-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
     button.submit {
   font-size: 1.1rem;
   padding: 6px 10px;
@@ -62,16 +60,7 @@
     .order { background: #007acc; }
     .clear { background: #999; color: #fff; }
     button:hover { opacity: 0.9; cursor: pointer; }
-    @media (min-width: 500px) {
-      .btn-group {
-  justify-content: space-around;
-  flex-wrap: wrap; flex-direction: row; flex-wrap: wrap; }
-      button.submit {
-  font-size: 1.1rem;
-  padding: 6px 10px;
-  width: auto;
-  min-width: 42px; flex: 1; }
-    }
+
     .form-container {
       max-width: 640px;
       margin: auto;
