@@ -622,59 +622,7 @@ function submitAllExpressCache() {
   });
 }
 </script>
-    <script>
-// 同时支持点击和触摸事件
-document.querySelectorAll(".btn-group button").forEach(button => {
-    button.addEventListener("click", handleTooltip);
-    button.addEventListener("touchstart", handleTooltip);
-});
 
-function handleTooltip(event) {
-    // 阻止事件冒泡，防止点击按钮本身关闭提示
-    event.stopPropagation();
-
-    // 清除已有的提示框，避免多个重叠
-    document.querySelectorAll(".tooltip").forEach(t => t.remove());
-
-    // 获取按钮描述
-    const button = event.currentTarget;
-    const description = button.getAttribute("data-description");
-
-    // 创建提示框
-    const tooltip = document.createElement("div");
-    tooltip.classList.add("tooltip");
-    tooltip.textContent = description;
-    document.body.appendChild(tooltip);
-
-    // 计算位置
-    const rect = button.getBoundingClientRect();
-    const tooltipWidth = tooltip.offsetWidth;
-    const left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
-    const top = rect.top - tooltip.offsetHeight - 10;
-
-    // 确保提示框不超出屏幕
-    tooltip.style.left = `${Math.max(10, left)}px`;
-    tooltip.style.top = `${Math.max(10, top)}px`;
-
-    // 显示提示框
-    tooltip.style.display = "block";
-
-    // 点击其他地方关闭提示
-    function hideTooltip(e) {
-        if (!tooltip.contains(e.target) && e.target !== button) {
-            tooltip.remove();
-            document.removeEventListener("click", hideTooltip);
-            document.removeEventListener("touchstart", hideTooltip);
-        }
-    }
-
-    // 延迟绑定，避免自身点击立刻关闭
-    setTimeout(() => {
-        document.addEventListener("click", hideTooltip);
-        document.addEventListener("touchstart", hideTooltip);
-    }, 100);
-}
-</script>
 
 </body>
 </html>
