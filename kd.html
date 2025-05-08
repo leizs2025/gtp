@@ -227,402 +227,522 @@
       </form>
     </div>
   </div>
-  <script>
+<script>
+// 🌐 URL 配置
+const EXPRESS_WORKER_URL = "https://yjtee.jeenty.workers.dev/express";
+const ORDER_WORKER_URL = "https://yjtee.jeenty.workers.dev/order";
+
+// 正式提交 URL
 const EXPRESS_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas3";
 const ORDER_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas4";
-function getField(id) {
-  return document.getElementById(id)?.value.trim() || '';
-}
-function setField(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.value = val;
-}
-function parseOrZero(val) {
-  return parseFloat(val) || 0;
-}
-function calculateTotal(quantity, price, foreignShipping, customer) {
-  const subtotal = quantity * price + foreignShipping;
-  const markupMap = {
-    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
-  };
-  const markupRate = markupMap[customer] || 0;
-  const total = (subtotal / 1.6) * (1 + markupRate);
-  return {
-    subtotal: subtotal.toFixed(2),
-    total: total.toFixed(2)
-  };
-}
-function updateSummary() {
-  const quantity = parseOrZero(getField("quantity"));
-  const price = parseOrZero(getField("price"));
-  const fee = parseOrZero(getField("foreignShipping"));
-  const customer = getField("customer");
-  const subtotal = quantity * price + fee;
-  const markupMap = {
-    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
-  };
-  const markupRate = markupMap[customer] || 0;
-  const total = (subtotal / 1.6) * (1 + markupRate);
-  document.getElementById("subtotal").textContent = subtotal.toFixed(2);
-  document.getElementById("total").textContent = total.toFixed(2);
-}
-function submitAsExpress() {
-  const data = {
-    customer: getField("customer"),
-    orderNumber: getField("orderNumber"),
-    trackingNumber: getField("trackingNumber"),
-    company: getField("company"),
-    product: getField("product")
-  };
-  const qty = parseOrZero(getField("quantity"));
-  const price = parseOrZero(getField("price"));
-  const fee = parseOrZero(getField("foreignShipping"));
-  const { total } = calculateTotal(qty, price, fee, data.customer);
-  data.total = total;
-  fetch(EXPRESS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  })
-  .then(res => res.json())
-  .then(r => alert(r.message || "快递信息提交成功"))
-  .catch(() => alert("提交失败"));
-}
-function submitAsOrder() {
-  const data = {
-    customer: getField("customer"),
-    orderNumber: getField("orderNumber"),
-    trackingNumber: getField("trackingNumber"),
-    product: getField("product"),
-    quantity: getField("quantity"),
-    price: getField("price"),
-    foreignShipping: getField("foreignShipping")
-  };
-  const qty = parseOrZero(data.quantity);
-  const price = parseOrZero(data.price);
-  const fee = parseOrZero(data.foreignShipping);
-  const { subtotal, total } = calculateTotal(qty, price, fee, data.customer);
-  data.subtotal = subtotal;
-  data.total = total;
-  if (!confirm(`确认提交订单？
-数量: ${qty} × 单价: ${price}
-运费: ${fee}
-小计: ${data.subtotal}
-折算总计: ${data.total}`)) return;
-  fetch(ORDER_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  })
-  .then(res => res.json())
-  .then(r => alert(r.message || "订单信息提交成功"))
-  .catch(() => alert("提交失败"));
-}
-function clearForm() {
-  document.querySelectorAll("input, select").forEach(el => el.value = "");
-  updateSummary();
-}
-["quantity", "price", "foreignShipping", "customer"].forEach(id => {
-  document.getElementById(id).addEventListener("input", updateSummary);
-  document.getElementById(id).addEventListener("change", updateSummary);
-});
-const ORDER_CACHE_KEY = "orderCache";
+
+// 📦 缓存键
 const EXPRESS_CACHE_KEY = "expressCache";
-function cacheOrder() {
-  const data = {
-    customer: getField("customer"),
-    orderNumber: getField("orderNumber"),
-    trackingNumber: getField("trackingNumber"),
-    product: getField("product"),
-    quantity: getField("quantity"),
-    price: getField("price"),
-    foreignShipping: getField("foreignShipping")
-  };
-  let list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-  list.push(data);
-  localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(list));
-  alert("已缓存当前订单 ✅");
+const ORDER_CACHE_KEY = "orderCache";
+
+// 获取表单字段值
+function getField(id) {
+    return document.getElementById(id)?.value.trim() || '';
 }
-function previewOrderCache() {
-  const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-  const container = document.getElementById("orderCacheList");
-  if (!list.length) return alert("暂无缓存订单");
-  container.innerHTML = list.map((item, i) => `
-    <li>
-      <label><input type='checkbox' name='orderIndex' value='${i}'>
-      订单: ${item.orderNumber} (${item.customer})</label>
-      <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
-      <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
-    </li>`).join("");
-  document.getElementById("orderCacheModal").style.display = "flex";
+
+// 设置表单字段值
+function setField(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
 }
-function closeOrderModal() {
-  document.getElementById("orderCacheModal").style.display = "none";
+
+// 转换为数字，非法值返回0
+function parseOrZero(val) {
+    return parseFloat(val) || 0;
 }
-function submitSelectedOrders() {
-  const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
-  let list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-  let success = [];
-  let promises = selected.map(i => {
-    const item = list[i];
-    const { subtotal, total } = calculateTotal(parseOrZero(item.quantity), parseOrZero(item.price), parseOrZero(item.foreignShipping), item.customer);
-    return fetch(ORDER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...item, subtotal, total })
-    }).then(res => res.json()).then(r => {
-      if (r.message?.includes("成功")) success.push(i);
-    });
-  });
-  Promise.all(promises).then(() => {
-    list = list.filter((_, i) => !success.includes(i));
-    localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(list));
-    closeOrderModal();
-    alert(`成功提交 ${success.length} 条订单 ✅`);
-  });
+
+// 清空表单
+function clearForm() {
+    document.querySelectorAll("input, select").forEach(el => el.value = "");
+    updateSummary();
 }
-function deleteOrderCache(index) {
-  let list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-  list.splice(index, 1);
-  localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(list));
-  previewOrderCache();
+
+// 实时计算小计和总计
+function updateSummary() {
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const fee = parseOrZero(getField("foreignShipping"));
+    const customer = getField("customer");
+    
+    const { subtotal, total } = calculateTotal(quantity, price, fee, customer);
+    
+    document.getElementById("subtotal").textContent = subtotal;
+    document.getElementById("total").textContent = total;
 }
+
+// 计算小计和总计函数 (修正版)
+function calculateTotal(quantity, price, fee, customer) {
+    const subtotal = (quantity * price) + fee;
+    
+    // 客户加价率
+    const markupMap = {
+        "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+        "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+    };
+    const markupRate = markupMap[customer] || 0;
+
+    // **修正公式:** 总计 = (小计 / 1.6) * (1 + 加价率)
+    const total = (subtotal / 1.6) * (1 + markupRate);
+    
+    // 格式化两位小数
+    return {
+        subtotal: subtotal.toFixed(2),
+        total: total.toFixed(2)
+    };
+}
+
+
+// 💾 缓存快递草稿 (修正版)
+function cacheExpress() { 
+    const orderNumber = getField("orderNumber");
+    const trackingNumber = getField("trackingNumber");
+    const customer = getField("customer");
+    const company = getField("company");
+    const product = getField("product");
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const foreignShipping = parseOrZero(getField("foreignShipping"));
+
+    // ✅ 确保 cache 是一个数组
+    let cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+
+    // **⚠️ 确保转换成功**
+    if (!Array.isArray(cache)) cache = [];
+
+    // ✅ 允许空快递单号
+    cache.push({ trackingNumber, customer, company, product, quantity, price, foreignShipping });
+    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
+    alert("快递草稿已缓存 ✅");
+    clearForm();
+}
+
+// 计算小计和总计函数
+function calculateTotal(quantity, price, fee, customer) {
+    const subtotal = quantity * price + fee;
+    const markupMap = {
+        "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+        "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+    };
+    const markupRate = markupMap[customer] || 0;
+    const total = (subtotal / 1.6) * (1 + markupRate);
+    return { subtotal: subtotal.toFixed(2), total: total.toFixed(2) };
+}
+
+// 编辑订单缓存
 function editOrderCache(index) {
-  const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-  const item = list[index];
-  if (!item) return;
-  setField("customer", item.customer);
-  setField("orderNumber", item.orderNumber);
-  setField("trackingNumber", item.trackingNumber);
-  setField("product", item.product);
-  setField("quantity", item.quantity);
-  setField("price", item.price);
-  setField("foreignShipping", item.foreignShipping);
-  deleteOrderCache(index);
-  closeOrderModal();
+    const cache = JSON.parse(localStorage.getItem("orderCache") || "[]");
+    const item = cache[index];
+    if (!item) return alert("找不到该订单");
+
+    // 填充表单数据
+    setField("orderNumber", item.orderNumber);
+    setField("customer", item.customer);
+    setField("product", item.product);
+    setField("quantity", item.quantity);
+    setField("price", item.price);
+    setField("foreignShipping", item.foreignShipping);
+    updateSummary();
+
+    // 从缓存中移除已编辑的项
+    cache.splice(index, 1);
+    localStorage.setItem("orderCache", JSON.stringify(cache));
+
+    alert("订单已加载到表单，请修改后重新缓存");
+    closeOrderModal();
 }
-function cacheExpress() {
-  const data = {
-    customer: getField("customer"),
-    orderNumber: getField("orderNumber"),
-    trackingNumber: getField("trackingNumber"),
-    company: getField("company"),
-    product: getField("product"),
-    quantity: getField("quantity"),
-    price: getField("price"),
-    foreignShipping: getField("foreignShipping")
-  };
-  let list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-  list.push(data);
-  localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(list));
-  alert("快递信息已缓存 ✅");
-}
-function previewExpressCache() {
-  const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-  const container = document.getElementById("expressCacheList");
-  if (!list.length) return alert("暂无缓存快递");
-  container.innerHTML = list.map((item, i) => `
-    <li>
-      <label><input type='checkbox' name='expressIndex' value='${i}'>
-      快递: ${item.trackingNumber} (${item.customer})</label>
-      <button type='button' onclick='editExpressCache(${i})'>✏️ 修改</button>
-      <button type='button' onclick='deleteExpressCache(${i})'>🗑️ 删除</button>
-    </li>`).join("");
-  document.getElementById("expressCacheModal").style.display = "flex";
-}
-function closeExpressModal() {
-  document.getElementById("expressCacheModal").style.display = "none";
-}
-function submitSelectedExpresses() {
-  const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
-  let list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-  let success = [];
-  let promises = selected.map(i => {
-    const item = list[i];
-    const { total } = calculateTotal(parseOrZero(item.quantity), parseOrZero(item.price), parseOrZero(item.foreignShipping), item.customer);
-    return fetch(EXPRESS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...item, total })
-    }).then(res => res.json()).then(r => {
-      if (r.message?.includes("成功")) success.push(i);
-    });
-  });
-  Promise.all(promises).then(() => {
-    list = list.filter((_, i) => !success.includes(i));
-    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(list));
-    closeExpressModal();
-    alert(`成功提交 ${success.length} 条快递 ✅`);
-  });
-}
-function deleteExpressCache(index) {
-  let list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-  list.splice(index, 1);
-  localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(list));
-  previewExpressCache();
-}
+
+// ✅ 修正版 editExpressCache (确保订单号填充)
 function editExpressCache(index) {
-  const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-  const item = list[index];
-  if (!item) return;
-  setField("customer", item.customer);
-  setField("orderNumber", item.orderNumber);
-  setField("trackingNumber", item.trackingNumber);
-  setField("company", item.company);
-  setField("product", item.product);
-  setField("quantity", item.quantity);
-  setField("price", item.price);
-  setField("foreignShipping", item.foreignShipping);
-  deleteExpressCache(index);
-  closeExpressModal();
+    const cache = JSON.parse(localStorage.getItem("expressCache") || "[]");
+    const item = cache[index];
+    if (!item) return alert("找不到该快递");
+
+    // ✅ 填充表单数据 (确保订单号)
+    setField("orderNumber", item.orderNumber || "");
+    setField("trackingNumber", item.trackingNumber || "");
+    setField("customer", item.customer || "");
+    setField("company", item.company || "");
+    setField("product", item.product || "");
+    setField("quantity", item.quantity || "");
+    setField("price", item.price || "");
+    setField("foreignShipping", item.foreignShipping || "");
+    updateSummary();
+
+    // ✅ 从缓存中移除已编辑的项 (确保不会重复)
+    cache.splice(index, 1);
+    localStorage.setItem("expressCache", JSON.stringify(cache));
+
+    alert("快递已加载到表单，请修改后重新缓存");
+    closeExpressModal();
 }
-function exportCache(key) {
-  const data = localStorage.getItem(key) || "[]";
-  const blob = new Blob([data], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${key}.json`;
-  a.click();
+
+
+// 💾 缓存快递草稿 (修正版)
+function cacheExpress() { 
+    const orderNumber = getField("orderNumber");
+    const trackingNumber = getField("trackingNumber");
+    const customer = getField("customer");
+    const company = getField("company");
+    const product = getField("product");
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const foreignShipping = parseOrZero(getField("foreignShipping"));
+
+    // ✅ 确保 cache 是一个数组
+    let cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    if (!Array.isArray(cache)) cache = [];
+
+    // ✅ 加入 orderNumber
+    cache.push({ 
+        orderNumber: orderNumber || "",  // ✅ 确保包含订单号
+        trackingNumber: trackingNumber || "", 
+        customer: customer || "", 
+        company: company || "", 
+        product: product || "", 
+        quantity: quantity.toString(), 
+        price: price.toString(), 
+        foreignShipping: foreignShipping.toString() 
+    });
+
+    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
+    alert("快递草稿已缓存 ✅");
+    clearForm();
 }
-function importCache(event, key) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (!Array.isArray(imported)) throw new Error("文件格式不正确");
-      const existing = JSON.parse(localStorage.getItem(key) || "[]");
-      const merged = existing.concat(imported);
-      localStorage.setItem(key, JSON.stringify(merged));
-      alert(`导入成功，共合并 ${imported.length} 条记录 ✅`);
-    } catch (err) {
-      alert("导入失败：" + err.message);
+
+// 🔄 预览订单缓存 - 增加修改按钮功能
+function previewOrderCache() {
+    const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    const container = document.getElementById("orderCacheList");
+    if (!list.length) return alert("暂无缓存订单");
+
+    container.innerHTML = list.map((item, i) => `
+        <li>
+            <label>
+                <input type='checkbox' name='orderIndex' value='${i}'>
+                订单号: ${item.orderNumber} | 客户: ${item.customer}
+            </label>
+            <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
+            <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
+        </li>`).join("");
+
+    document.getElementById("orderCacheModal").style.display = "flex";
+}
+
+// 💾 缓存订单草稿
+function cacheOrder() {
+    const orderNumber = getField("orderNumber");
+    const customer = getField("customer");
+    const product = getField("product");
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const foreignShipping = parseOrZero(getField("foreignShipping"));
+
+    if (!orderNumber) return alert("订单号不能为空");
+
+    const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    cache.push({ orderNumber, customer, product, quantity, price, foreignShipping });
+    localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(cache));
+    alert("订单草稿已缓存 ✅");
+    clearForm();
+}
+
+// 📋 预览快递缓存 (修正版)
+function previewExpressCache() {
+    const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    const container = document.getElementById("expressCacheList");
+    if (!list.length) return alert("暂无缓存快递");
+
+    container.innerHTML = list.map((item, i) => `
+        <li>
+            <label>
+                <input type='checkbox' name='expressIndex' value='${i}'>
+                订单号: ${item.orderNumber || "未填写"} | 客户: ${item.customer || "未填写"} | 快递单号: ${item.trackingNumber || "未填写"}
+            </label>
+            <button type='button' onclick='editExpressCache(${i})'>✏️ 修改</button>
+            <button type='button' onclick='deleteExpressCache(${i})'>🗑️ 删除</button>
+        </li>`).join("");
+
+    document.getElementById("expressCacheModal").style.display = "flex";
+}
+
+
+// 📋 预览订单缓存
+function previewOrderCache() {
+    const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    const container = document.getElementById("orderCacheList");
+    if (!list.length) return alert("暂无缓存订单");
+
+    container.innerHTML = list.map((item, i) => `
+        <li>
+            <label><input type='checkbox' name='orderIndex' value='${i}'>
+            订单号: ${item.orderNumber} | 客户: ${item.customer}</label>
+            <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
+            <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
+        </li>`).join("");
+
+    document.getElementById("orderCacheModal").style.display = "flex";
+}
+// ✅ 删除订单缓存
+function deleteOrderCache(index) {
+    const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    if (index >= 0 && index < cache.length) {
+        // **⚠️ 确保索引有效**
+        cache.splice(index, 1);
+        localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(cache));
+        alert("订单已删除 ✅");
+        previewOrderCache(); // **刷新列表**
     }
-  };
-  reader.readAsText(file);
 }
-function uploadCachedOrders() {
-  const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-  if (!list.length) return alert("没有订单草稿");
-  fetch(ORDER_URL + "?uploadCache=1", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(list)
-  }).then(res => res.json()).then(r => alert(r.message || "订单草稿上传成功 ✅"))
-    .catch(() => alert("上传失败"));
+
+// ✅ 删除快递缓存
+function deleteExpressCache(index) {
+    const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    if (index >= 0 && index < cache.length) {
+        // **⚠️ 确保索引有效**
+        cache.splice(index, 1);
+        localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
+        alert("快递已删除 ✅");
+        previewExpressCache(); // **刷新列表**
+    }
 }
+
+// ✅ 提交选中的快递草稿 (正式)
+// ✅ 修正版 submitSelectedExpresses
+function submitSelectedExpresses() {
+    const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
+    let list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    let success = [];
+
+    // 🚀 并行提交
+    let promises = selected.map(i => {
+        const item = list[i];
+
+        // ⚠️ 确保字段完整
+        const expressData = {
+            customer: item.customer || "",
+            trackingNumber: item.trackingNumber || "",  // 确保存在
+            company: item.company || "",
+            product: item.product || "",
+            quantity: parseOrZero(item.quantity).toString(),
+            price: parseOrZero(item.price).toString(),
+            foreignShipping: parseOrZero(item.foreignShipping).toString()
+        };
+
+        // ✅ 计算 total
+        const { total } = calculateTotal(
+            parseOrZero(item.quantity), 
+            parseOrZero(item.price), 
+            parseOrZero(item.foreignShipping), 
+            item.customer
+        );
+        
+        // ✅ 确保提交数据结构完整
+        return fetch(EXPRESS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...expressData, total })
+        })
+        .then(res => res.json())
+        .then(r => {
+            if (r.message?.includes("成功")) success.push(i);
+        });
+    });
+
+    // ✅ 更新本地缓存
+    Promise.all(promises).then(() => {
+        list = list.filter((_, i) => !success.includes(i));
+        localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(list));
+        closeExpressModal();
+        alert(`成功提交 ${success.length} 条快递 ✅`);
+    })
+    .catch(err => {
+        console.error("🛑 提交失败:", err);
+        alert("快递草稿提交失败");
+    });
+}
+
+
+// ✅ 提交选中的订单草稿 (正式)
+// ✅ 修正版 submitSelectedOrders
+function submitSelectedOrders() {
+    const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
+    let list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    let successItems = [];
+
+    // 🚀 并行提交
+    let promises = selected.map(i => {
+        const item = list[i];
+
+        // ⚠️ 确保字段完整
+        const orderData = {
+            customer: item.customer || "",
+            orderNumber: item.orderNumber || "",
+            trackingNumber: item.trackingNumber || "",
+            product: item.product || "",
+            quantity: parseOrZero(item.quantity).toString(),
+            price: parseOrZero(item.price).toString(),
+            foreignShipping: parseOrZero(item.foreignShipping).toString()
+        };
+
+        // ✅ 计算 subtotal 和 total
+        const { subtotal, total } = calculateTotal(
+            parseOrZero(item.quantity), 
+            parseOrZero(item.price), 
+            parseOrZero(item.foreignShipping), 
+            item.customer
+        );
+        
+        // ✅ 确保提交数据结构完整
+        return fetch(ORDER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...orderData, subtotal, total })
+        })
+        .then(res => {
+            // ✅ 检查 HTTP 状态码
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+            return res.json();
+        })
+        .then(r => {
+            console.log("✅ 服务器返回:", r);
+            // ✅ 判断是否成功 (检查返回的状态码或自定义字段)
+            if (r.success || r.message?.includes("成功") || r.status === "ok") {
+                successItems.push(item);
+            }
+        })
+        .catch(err => {
+            console.error("🛑 提交失败:", err);
+            alert(`订单提交失败: ${err.message}`);
+        });
+    });
+
+    // ✅ 更新本地缓存
+    Promise.all(promises).then(() => {
+        // **移除已提交的项目**
+        list = list.filter(item => !successItems.includes(item));
+        localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(list));
+        closeOrderModal();
+        alert(`成功提交 ${successItems.length} 条订单 ✅`);
+    });
+}
+
 function uploadCachedExpress() {
-  const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-  if (!list.length) return alert("没有快递草稿");
-  fetch(EXPRESS_URL + "?uploadCache=1", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(list)
-  }).then(res => res.json()).then(r => alert(r.message || "快递草稿上传成功 ✅"))
-    .catch(() => alert("上传失败"));
+    const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    if (!cache.length) return alert("没有快递草稿");
+
+    fetch(EXPRESS_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cache)
+    })
+    .then(res => res.json())
+    .then(r => alert(r.message || "快递草稿上传成功 ✅"))
+    .catch(() => alert("快递草稿上传失败"));
 }
+
+// ⬆️ 上传订单草稿
+function uploadCachedOrders() {
+    const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    if (!cache.length) return alert("没有订单草稿");
+
+    fetch(ORDER_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cache)
+    })
+    .then(res => res.json())
+    .then(r => alert(r.message || "订单草稿上传成功 ✅"))
+    .catch(() => alert("订单草稿上传失败"));
+}
+// 🔄 同步订单草稿 (下载)
 function downloadCachedOrders() {
-  fetch(ORDER_URL + "?downloadCache=1")
-    .then(res => res.json())
-    .then(list => {
-      const local = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-      const merged = local.concat(list);
-      localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(merged));
-      alert(`已下载 ${list.length} 条订单草稿 ✅`);
-    }).catch(() => alert("下载失败"));
+    fetch(ORDER_WORKER_URL + "?downloadCache=1")
+        .then(res => res.json())
+        .then(data => {
+            // ✅ 列名映射
+            const mappedData = data.map(item => ({
+                orderNumber: item.col1 || "",     // 订单号
+                customer: item.col2 || "",        // 客户名称
+                product: item.col3 || "",         // 商品名
+                trackingNumber: item.col4 || "",  // 快递单号 (如果有)
+                company: item.col5 || "",         // 快递公司 (如果有)
+                quantity: item.col6 || "",        // 数量
+                price: item.col7 || "",           // 单价
+                foreignShipping: item.col8 || ""  // 快递费 (如果有)
+            }));
+
+            // ✅ 过滤掉完全为空的数据
+            const validData = mappedData.filter(item => 
+                Object.values(item).some(v => v !== "" && v !== null && v !== undefined)
+            );
+
+            if (validData.length > 0) {
+                localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(validData));
+                alert("订单草稿已同步 ✅");
+            } else {
+                alert("没有可同步的订单草稿");
+            }
+        })
+        .catch(err => {
+            console.error("🛑 下载订单草稿失败:", err);
+            alert("订单草稿同步失败");
+        });
 }
+
+
+// 🔄 同步快递草稿 (修正版)
 function downloadCachedExpress() {
-  fetch(EXPRESS_URL + "?downloadCache=1")
-    .then(res => res.json())
-    .then(list => {
-      const local = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-      const merged = local.concat(list);
-      localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(merged));
-      alert(`已下载 ${list.length} 条快递草稿 ✅`);
-    }).catch(() => alert("下载失败"));
+    fetch(EXPRESS_WORKER_URL + "?downloadCache=1")
+        .then(res => res.json())
+        .then(data => {
+            // ✅ 列名映射 (确保包含 orderNumber)
+            const mappedData = data.map(item => ({
+                orderNumber: item.col1 || "",         // 订单号
+                trackingNumber: item.col2 || "",      // 快递单号
+                customer: item.col3 || "",            // 客户名称
+                company: item.col4 || "",             // 快递公司
+                product: item.col5 || "",             // 商品名
+                quantity: item.col6 || "",            // 数量
+                price: item.col7 || "",               // 单价
+                foreignShipping: item.col8 || ""      // 快递费
+            }));
+
+            // ✅ 过滤掉完全为空的数据
+            const validData = mappedData.filter(item => 
+                Object.values(item).some(v => v !== "" && v !== null && v !== undefined)
+            );
+
+            // ✅ 确保缓存一致性
+            if (validData.length > 0) {
+                localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(validData));
+                alert("快递草稿已同步 ✅");
+            } else {
+                alert("没有可同步的快递草稿");
+            }
+        })
+        .catch(err => {
+            console.error("🛑 下载快递草稿失败:", err);
+            alert("快递草稿同步失败");
+        });
 }
-function submitAllOrderCache() {
-  const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-  if (!cache.length) return alert("没有可提交的订单缓存");
-  const promises = cache.map(item => {
-    const { subtotal, total } = calculateTotal(
-      parseOrZero(item.quantity),
-      parseOrZero(item.price),
-      parseOrZero(item.foreignShipping),
-      item.customer
-    );
-    const payload = {
-      customer: item.customer,
-      values: [
-        item.customer,
-        item.orderNumber,
-        item.trackingNumber,
-        item.product,
-        item.quantity,
-        item.price,
-        item.foreignShipping,
-        subtotal,
-        total
-      ]
-    };
-    return fetch(ORDER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-  });
-  Promise.all(promises).then(() => {
-    localStorage.removeItem(ORDER_CACHE_KEY);
-    fetch(ORDER_URL + "?clearDraft=1").then(() => {
-      alert("✅ 所有订单已批量提交并清除缓存");
-    });
-  });
+
+
+// 🔒 关闭弹窗
+function closeOrderModal() {
+    document.getElementById("orderCacheModal").style.display = "none";
 }
-function submitAllExpressCache() {
-  const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-  if (!cache.length) return alert("没有可提交的快递缓存");
-  const promises = cache.map(item => {
-    const { total } = calculateTotal(
-      parseOrZero(item.quantity),
-      parseOrZero(item.price),
-      parseOrZero(item.foreignShipping),
-      item.customer
-    );
-    const payload = {
-      customer: item.customer,
-      values: [
-        item.customer,
-        item.orderNumber,
-        item.trackingNumber,
-        item.company,
-        item.product,
-        item.quantity,
-        item.price,
-        item.foreignShipping,
-        total
-      ]
-    };
-    return fetch(EXPRESS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-  });
-  Promise.all(promises).then(() => {
-    localStorage.removeItem(EXPRESS_CACHE_KEY);
-    fetch(EXPRESS_URL + "?clearDraft=1").then(() => {
-      alert("✅ 所有快递已批量提交并清除缓存");
-    });
-  });
+
+function closeExpressModal() {
+    document.getElementById("expressCacheModal").style.display = "none";
 }
 </script>
-
 
 </body>
 </html>
