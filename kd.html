@@ -527,6 +527,7 @@ function submitSelectedExpresses() {
         // ⚠️ 确保字段完整
         const expressData = {
             customer: item.customer || "",
+            orderNumber: item.orderNumber || "",
             trackingNumber: item.trackingNumber || "",  // 确保存在
             company: item.company || "",
             product: item.product || "",
