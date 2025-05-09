@@ -262,40 +262,56 @@ function clearForm() {
     updateSummary();
 }
 
+// 💰 客户加价率 (全局定义)
+const MARKUP_MAP = {
+    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+};
+
 // 实时计算小计和总计
 function updateSummary() {
     const quantity = parseOrZero(getField("quantity"));
     const price = parseOrZero(getField("price"));
     const fee = parseOrZero(getField("foreignShipping"));
     const customer = getField("customer");
-    
+
     const { subtotal, total } = calculateTotal(quantity, price, fee, customer);
     
+    // ✅ 直接更新 DOM
     document.getElementById("subtotal").textContent = subtotal;
     document.getElementById("total").textContent = total;
 }
 
-// 计算小计和总计函数 (修正版)
+// 计算小计和总计 (优化版)
 function calculateTotal(quantity, price, fee, customer) {
     const subtotal = (quantity * price) + fee;
-    
-    // 客户加价率
-    const markupMap = {
-        "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-        "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
-    };
-    const markupRate = markupMap[customer] || 0;
+    const markupRate = MARKUP_MAP[customer] || 0;
 
-    // **修正公式:** 总计 = (小计 / 1.6) * (1 + 加价率)
+    // **优化公式:** 总计 = (小计 / 1.6) * (1 + 加价率)
     const total = (subtotal / 1.6) * (1 + markupRate);
     
-    // 格式化两位小数
+    // ✅ 格式化两位小数
     return {
         subtotal: subtotal.toFixed(2),
         total: total.toFixed(2)
     };
 }
+
+// ✅ 确保表单输入触发 updateSummary()
+function bindSummaryEvents() {
+    const fields = ["quantity", "price", "foreignShipping", "customer"];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", updateSummary);
+            el.addEventListener("change", updateSummary);
+        }
+    });
+}
+
+// ✅ 页面加载完成后绑定事件
+document.addEventListener("DOMContentLoaded", bindSummaryEvents);
 
 
 
