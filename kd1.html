@@ -69,7 +69,7 @@
 <div class="inline-input">
   <input type="text" id="trackingNumber" placeholder="输入快递单号或后5位">
   <button onclick="queryData()">🔍 查询</button>
-  <button onclick="startScan()">📷 扫码</button>
+  <button onclick="startScan()">📷 </button>
 </div>
 
 <video id="scannerPreview" style="width:100%; max-height:300px; display:none; border:1px solid #ccc; margin-top:10px;" playsinline></video>
@@ -96,10 +96,10 @@
 <div class="section-title">📋 已缓存记录</div>
 <div id="previewList"></div>
 
-<div class="section-title">🧾 筛选客户生成小票</div>
+<div class="section-title">🧾 筛选客户</div>
 <div class="inline-input">
   <select id="ticketSelector" onchange="renderTicket()"><option value="">请选择客户</option></select>
-  <button onclick="downloadTicketAsImage()">📸 下载小票截图</button>
+  <button onclick="downloadTicketAsImage()">📸 小票截图</button>
 </div>
 <div id="ticketPreview"></div>
 
