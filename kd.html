@@ -314,11 +314,10 @@ function bindSummaryEvents() {
 document.addEventListener("DOMContentLoaded", bindSummaryEvents);
 
 
-
 // 💾 缓存快递草稿 (修正版)
 function cacheExpress() { 
-    const orderNumber = getField("orderNumber");
-    const trackingNumber = getField("trackingNumber");
+    const orderNumber = String(getField("orderNumber")).trim();
+    const trackingNumber = String(getField("trackingNumber")).trim();
     const customer = getField("customer");
     const company = getField("company");
     const product = getField("product");
@@ -359,12 +358,14 @@ function editOrderCache(index) {
     if (!item) return alert("找不到该订单");
 
     // 填充表单数据
-    setField("orderNumber", item.orderNumber);
-    setField("customer", item.customer);
-    setField("product", item.product);
-    setField("quantity", item.quantity);
-    setField("price", item.price);
-    setField("foreignShipping", item.foreignShipping);
+    setField("orderNumber", String(item.orderNumber || "").trim());
+    setField("trackingNumber", String(item.trackingNumber || "").trim());
+    setField("company", item.company || "");
+    setField("customer", item.customer|| "");
+    setField("product", item.product|| "");
+    setField("quantity", item.quantity|| "");
+    setField("price", item.price|| "");
+    setField("foreignShipping", item.foreignShipping|| "");
     updateSummary();
 
     // 从缓存中移除已编辑的项
@@ -382,10 +383,10 @@ function editExpressCache(index) {
     if (!item) return alert("找不到该快递");
 
     // ✅ 填充表单数据 (确保订单号)
-    setField("orderNumber", item.orderNumber || "");
-    setField("trackingNumber", item.trackingNumber || "");
-    setField("customer", item.customer || "");
+    setField("orderNumber", String(item.orderNumber || "").trim());
+    setField("trackingNumber", String(item.trackingNumber || "").trim());
     setField("company", item.company || "");
+    setField("customer", item.customer || "");
     setField("product", item.product || "");
     setField("quantity", item.quantity || "");
     setField("price", item.price || "");
@@ -403,8 +404,8 @@ function editExpressCache(index) {
 
 // 💾 缓存快递草稿 (修正版)
 function cacheExpress() { 
-    const orderNumber = getField("orderNumber");
-    const trackingNumber = getField("trackingNumber");
+    const orderNumber = String(getField("orderNumber")).trim(); 
+    const trackingNumber = String(getField("trackingNumber")).trim();
     const customer = getField("customer");
     const company = getField("company");
     const product = getField("product");
@@ -433,17 +434,17 @@ function cacheExpress() {
     clearForm();
 }
 
-// 🔄 预览订单缓存 - 增加修改按钮功能
 function previewOrderCache() {
     const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
     const container = document.getElementById("orderCacheList");
     if (!list.length) return alert("暂无缓存订单");
 
+    // ✅ 显示商品和客户
     container.innerHTML = list.map((item, i) => `
         <li>
             <label>
                 <input type='checkbox' name='orderIndex' value='${i}'>
-                订单号: ${item.orderNumber} | 客户: ${item.customer}
+                商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"}
             </label>
             <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
             <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
@@ -452,9 +453,14 @@ function previewOrderCache() {
     document.getElementById("orderCacheModal").style.display = "flex";
 }
 
+
+
+
 // 💾 缓存订单草稿
 function cacheOrder() {
-    const orderNumber = getField("orderNumber");
+    const orderNumber = String(getField("orderNumber")).trim(); 
+    const trackingNumber = getField("trackingNumber");
+    const company = getField("company");
     const customer = getField("customer");
     const product = getField("product");
     const quantity = parseOrZero(getField("quantity"));
@@ -464,7 +470,7 @@ function cacheOrder() {
     if (!orderNumber) return alert("订单号不能为空");
 
     const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-    cache.push({ orderNumber, customer, product, quantity, price, foreignShipping });
+    cache.push({ orderNumber, trackingNumber,company,customer, product, quantity, price, foreignShipping });
     localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(cache));
     alert("订单草稿已缓存 ✅");
     clearForm();
@@ -480,7 +486,7 @@ function previewExpressCache() {
         <li>
             <label>
                 <input type='checkbox' name='expressIndex' value='${i}'>
-                订单号: ${item.orderNumber || "未填写"} | 客户: ${item.customer || "未填写"} | 快递单号: ${item.trackingNumber || "未填写"}
+                商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"} | 快递单号: ${item.trackingNumber || "未填写"}
             </label>
             <button type='button' onclick='editExpressCache(${i})'>✏️ 修改</button>
             <button type='button' onclick='deleteExpressCache(${i})'>🗑️ 删除</button>
@@ -490,22 +496,7 @@ function previewExpressCache() {
 }
 
 
-// 📋 预览订单缓存
-function previewOrderCache() {
-    const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-    const container = document.getElementById("orderCacheList");
-    if (!list.length) return alert("暂无缓存订单");
 
-    container.innerHTML = list.map((item, i) => `
-        <li>
-            <label><input type='checkbox' name='orderIndex' value='${i}'>
-            订单号: ${item.orderNumber} | 客户: ${item.customer}</label>
-            <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
-            <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
-        </li>`).join("");
-
-    document.getElementById("orderCacheModal").style.display = "flex";
-}
 // ✅ 删除订单缓存
 function deleteOrderCache(index) {
     const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
@@ -529,6 +520,9 @@ function deleteExpressCache(index) {
         previewExpressCache(); // **刷新列表**
     }
 }
+
+
+
 
 // ✅ 修正版 - 提交并删除快递草稿
 function submitSelectedExpresses() {
@@ -673,34 +667,54 @@ function submitSelectedOrders() {
 }
 
 
+
+
+
+
+// ⬆️ 上传快递草稿 (允许空值)
 function uploadCachedExpress() {
     const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
     if (!cache.length) return alert("没有快递草稿");
 
+    // ✅ 允许空值上传
     fetch(EXPRESS_WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cache)
     })
-    .then(res => res.json())
-    .then(r => alert(r.message || "快递草稿上传成功 ✅"))
-    .catch(() => alert("快递草稿上传失败"));
+    .then(res => {
+        if (!res.ok) throw new Error("网络错误：" + res.status);
+        return res.json();
+    })
+    .then(r => alert(r.message || `已上传 ${cache.length} 条快递草稿 ✅`))
+    .catch(err => {
+        console.error("🛑 快递草稿上传失败:", err);
+        alert("快递草稿上传失败：" + err.message);
+    });
 }
 
-// ⬆️ 上传订单草稿
+// ⬆️ 上传订单草稿 (允许空值)
 function uploadCachedOrders() {
     const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
     if (!cache.length) return alert("没有订单草稿");
 
+    // ✅ 允许空值上传
     fetch(ORDER_WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cache)
     })
-    .then(res => res.json())
-    .then(r => alert(r.message || "订单草稿上传成功 ✅"))
-    .catch(() => alert("订单草稿上传失败"));
+    .then(res => {
+        if (!res.ok) throw new Error("网络错误：" + res.status);
+        return res.json();
+    })
+    .then(r => alert(r.message || `已上传 ${cache.length} 条订单草稿 ✅`))
+    .catch(err => {
+        console.error("🛑 订单草稿上传失败:", err);
+        alert("订单草稿上传失败：" + err.message);
+    });
 }
+
 // 🔄 同步订单草稿 (下载)
 function downloadCachedOrders() {
     fetch(ORDER_WORKER_URL + "?downloadCache=1")
@@ -774,6 +788,9 @@ function downloadCachedExpress() {
 }
 
 
+
+
+
 // 🔒 关闭弹窗
 function closeOrderModal() {
     document.getElementById("orderCacheModal").style.display = "none";
@@ -783,6 +800,5 @@ function closeExpressModal() {
     document.getElementById("expressCacheModal").style.display = "none";
 }
 </script>
-
 </body>
 </html>
