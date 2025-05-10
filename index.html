@@ -3,315 +3,831 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>快递查询与批量提交系统</title>
+  <title>快递与订单录入</title>
   <style>
-    body { background-color: #f5f5f5; padding: 15px; font-family: sans-serif; }
-    h1 { text-align: center; margin-bottom: 1rem; }
-    .form-section {
-      background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .input-group { margin-bottom: 1rem; }
-    .input-label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-    input, button, select {
-      width: 100%; padding: 10px; font-size: 1rem; border-radius: 8px; box-sizing: border-box;
-    }
-    input, select { border: 1px solid #ccc; }
-    button {
-      background: #3498db; color: white; border: none; margin-top: 10px; cursor: pointer;
-    }
-    button:hover { background: #2980b9; }
-    .data-line { margin-bottom: 8px; }
-    .data-label { font-weight: bold; }
-    #previewList div {
-      padding: 8px; border-bottom: 1px solid #eee;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .del-btn {
-      background: none; color: red; border: none; font-size: 18px; cursor: pointer;
-    }
-    .status-bar { padding: 10px; border-radius: 6px; font-weight: bold; margin: 10px 0; }
-    .success { background: #e0f8e9; color: #2c7a3f; }
-    .error { background: #fdecea; color: #c0392b; }
-    #ticketPreview {
-      width: 380px;
-      min-height: 400px;
-      max-height: 600px;
-      overflow-y: auto;
-      background: #f9f9f9;
-      border: 1px dashed #ccc;
-      padding: 15px;
+    body {
       font-family: sans-serif;
-      font-size: 16px;
-      white-space: pre-wrap;
-      margin-top: 15px;
-      line-height: 1.6;
-      word-break: break-word;
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      background-color: #f2f2f2;
     }
-    .ticket-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 16px;
+    h2 { text-align: center; }
+    label { display: block; margin-top: 16px; font-weight: bold; }
+    input, select, button {
+      width: 100%; padding: 12px; font-size: 1rem; margin-top: 5px; box-sizing: border-box;
     }
-    .ticket-table td {
-      padding: 4px 0;
-      vertical-align: top;
+    .input-group { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .input-row { display: flex; gap: 16px; width: 100%; flex-wrap: wrap; box-sizing: border-box; }
+    .input-group input, .input-group select {
+      padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;
+      height: 42px; background-color: #fff;
     }
-    .ticket-header {
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 16px;
+ <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      background-color: #f2f2f2;
     }
-    .ticket-summary {
-      text-align: right;
-      font-weight: bold;
-      margin-top: 10px;
+    h2 { text-align: center; }
+    label { display: block; margin-top: 16px; font-weight: bold; }
+    input, select, button {
+      width: 100%; padding: 12px; font-size: 1rem; margin-top: 5px; box-sizing: border-box;
+    }
+    .input-group { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .input-row { display: flex; gap: 16px; width: 100%; flex-wrap: wrap; box-sizing: border-box; }
+    .input-group input, .input-group select {
+      padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;
+      height: 42px; background-color: #fff;
+    }
+/* ✅ 彻底修复双箭头 */
+.input-group select {
+    -webkit-appearance: none;  /* 移除 Safari 默认箭头 */
+    -moz-appearance: none;     /* 移除 Firefox 默认箭头 */
+    appearance: none;          /* 移除 Chrome 默认箭头 */
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px 30px 10px 10px;
+    font-size: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpolygon points='0,0 10,0 5,5' fill='%23333'%3E%3C/polygon%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px 6px;
+    padding-right: 40px; /* 确保箭头不遮挡文本 */
+    cursor: pointer;
+}
+
+/* ✅ 移除 IE 和 Edge 的默认箭头 */
+select::-ms-expand {
+    display: none;
+}
+
+/* 🔄 聚焦效果 */
+.input-group select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* 🔄 禁用状态 */
+.input-group select:disabled {
+    background-color: #f2f2f2;
+    color: #999;
+}
+
+    }
+    .input-row.three-cols {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    button.submit {
+      border: none;
+      color: white;
+      border-radius: 6px;
+    }
+    .express { background: #28a745; }
+    .order { background: #007acc; }
+    .clear { background: #999; color: #fff; }
+    button:hover { opacity: 0.9; cursor: pointer; }
+    @media (min-width: 500px) {
+      .btn-group { flex-direction: row; flex-wrap: wrap; }
+      button.submit { flex: 1; }
+    }
+    .form-container {
+      max-width: 640px;
+      margin: auto;
+      background: #fffdf7;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .modal-mask {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-box {
+      background: #fff;
+      padding: 24px;
+      border-radius: 10px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-  <h1>快递查询提交</h1>
-  <div class="form-section">
-    <div class="input-group">
-      <label class="input-label">快递单号</label>
-      <input type="text" id="trackingNumber" placeholder="输入快递单号或后5位">
-      <button onclick="queryData()">🔍 查询</button>
+  
+  <div class="form-container">
+<div class="form-wrapper">
+  <div class="clear-icon" onclick="clearForm()" title="清空表单">🧹</div>
+  <div class="form-container">
+    <h2>📦 快递与订单统一录入</h2>
+    <div class="input-row">
+      <div class="input-group">
+        <label for="orderNumber">订单号</label>
+        <input type="text" id="orderNumber">
+      </div>
+      <div class="input-group">
+        <label for="customer">客户名称</label>
+        <select id="customer">
+          <option value="">请选择客户</option>
+          <option value="咪雪">咪雪</option>
+          <option value="Annie">Annie</option>
+          <option value="HKS">HKS</option>
+          <option value="JFL">JFL</option>
+          <option value="龙">龙</option>
+          <option value="惠">惠</option>
+          <option value="姐">姐</option>
+          <option value="阿妹">阿妹</option>
+          <option value="自己">自己</option>
+          <option value="阿新">阿新</option>
+          <option value="闺蜜">闺蜜</option>
+        </select>
+      </div>
     </div>
-
-    <div class="data-line"><span class="data-label">快递公司:</span> <span id="companyData">-</span></div>
-    <div class="data-line"><span class="data-label">货物名称:</span> <span id="productData">-</span></div>
-    <div class="data-line"><span class="data-label">客户名称:</span> <span id="customerData">-</span></div>
-    <div class="data-line"><span class="data-label">已知运费:</span> <span id="knownPrice">-</span></div>
-
-    <div class="input-group">
-      <label class="input-label">运费金额</label>
-      <input type="number" id="enteredPrice" placeholder="输入运费金额">
+    <div class="input-row">
+      <div class="input-group">
+        <label for="trackingNumber">快递单号</label>
+        <input type="text" id="trackingNumber">
+      </div>
+      <div class="input-group">
+        <label for="company">快递公司</label>
+        <select id="company">
+          <option value="">请选择快递公司</option>
+          <option value="顺丰">顺丰</option>
+          <option value="圆通">圆通</option>
+          <option value="中通">中通</option>
+          <option value="申通">申通</option>
+          <option value="邮政">邮政</option>
+          <option value="韵达">韵达</option>
+          <option value="德邦">德邦</option>
+          <option value="安能">安能</option>
+          <option value="极兔">极兔</option>
+          <option value="京广">京广</option>
+          <option value="优速">优速</option>
+          <option value="京东">京东</option>
+          <option value="EMS">EMS</option>
+        </select>
+      </div>
     </div>
-    <button onclick="addToCache()">➕ 加入缓存</button>
-    <div id="statusBar" class="status-bar" style="display:none;"></div>
-
-    <hr style="margin: 20px 0;">
-    <h3>📋 已缓存记录</h3>
-    <button onclick="loadCache()">📥 加载缓存</button>
-    <div id="previewList" style="margin-top: 10px;"></div>
-    <button onclick="submitAll()">📤 提交全部记录</button>
-    <button onclick="clearCache()" style="background:#e74c3c">🗑️ 清空缓存</button>
-    <div class="input-group">
-      <label class="input-label">🧾 筛选客户生成小票</label>
-      <select id="ticketSelector" onchange="renderTicket()"><option value="">请选择客户</option></select>
+    <div class="input-row">
+      <div class="input-group">
+        <label for="product">商品名</label>
+        <input type="text" id="product">
+      </div>
     </div>
-        <div id="ticketPreview" style="display:none;" style="display:none;"></div>
+    <div class="input-row three-cols">
+      <div class="input-group">
+        <label for="quantity">数量</label>
+        <input type="number" id="quantity">
+      </div>
+      <div class="input-group">
+        <label for="price">单价</label>
+        <input type="number" id="price">
+      </div>
+      <div class="input-group">
+        <label for="foreignShipping">快递费</label>
+        <input type="number" id="foreignShipping">
+      </div>
+    </div>
+  <div id="summary" style="margin-top: 18px; font-weight: bold; text-align: right;">
+    小计: <span id="subtotal">0.00</span>  | 总计: <span id="total">0.00</span>
+  </div>
+  <div class="btn-group">
+    <button class="submit" style="background:#ffc107; color:black;" onclick="cacheExpress()">💾 缓存快递</button>
+    <button class="submit" style="background:#ff5722; color:white;" onclick="previewExpressCache()">👁️ 快递缓存</button>
+    <button class="submit" style="background:#6c757d; color:white;" onclick="cacheOrder()">💾 缓存订单</button>
+    <button class="submit" style="background:#17a2b8; color:white;" onclick="previewOrderCache()">👁️ 订单缓存</button>
+   </div>
+  <div class="btn-group">
+    <button class="submit" style="background:#28a745;" onclick="uploadCachedExpress()">📦 上传快递</button>
+    <button class="submit" style="background:#007bff;" onclick="downloadCachedExpress()">📥 下载快递</button>
+    <button class="submit" style="background:#20c997;" onclick="uploadCachedOrders()">🧾 上传订单</button>
+    <button class="submit" style="background:#6f42c1;" onclick="downloadCachedOrders()">📥 下载订单</button>
 
-    <button onclick="downloadTicketAsImage()">📸 下载小票截图</button>
+  </div>
+</div>
+<!-- ✅ 快递缓存弹窗 -->
+  <div id="expressCacheModal" class="modal-mask">
+    <div class="modal-box">
+      <h3>📦 缓存快递预览</h3>
+      <form id="expressCacheForm">
+        <ul id="expressCacheList" style="list-style:none; padding-left:0;"></ul>
+        <div style="margin-top:20px; text-align:right;">
+          <button type="button" onclick="submitSelectedExpresses()">✅ 提交所选</button>
+          <button type="button" onclick="closeExpressModal()">关闭</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- ✅ 订单缓存弹窗 -->
+  <div id="orderCacheModal" class="modal-mask">
+    <div class="modal-box">
+      <h3>🧾 缓存订单预览</h3>
+      <form id="orderCacheForm">
+        <ul id="orderCacheList" style="list-style:none; padding-left:0;"></ul>
+        <div style="margin-top:20px; text-align:right;">
+          <button type="button" onclick="submitSelectedOrders()">✅ 提交所选</button>
+          <button type="button" onclick="closeOrderModal()">关闭</button>
+        </div>
+      </form>
+    </div>
   </div>
 
 <script>
-const API_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas1";
-let allRecords = [];
-let pendingSubmissions = [], lastFetched = {}, matchedTrackingNumber = "";
+// 🌐 URL 配置
+const EXPRESS_WORKER_URL = "https://yjtee.jeenty.workers.dev/express";
+const ORDER_WORKER_URL = "https://yjtee.jeenty.workers.dev/order";
 
-function loadCache() {
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "all" })
-  })
-  .then(res => res.json())
-  .then(data => {
-    allRecords = data;
-    showStatus("✅ 缓存加载成功，共 " + allRecords.length + " 条记录", "success");
-  })
-  .catch(() => showStatus("缓存加载失败", "error"));
+// 正式提交 URL
+const EXPRESS_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas3";
+const ORDER_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas4";
+
+// 📦 缓存键
+const EXPRESS_CACHE_KEY = "expressCache";
+const ORDER_CACHE_KEY = "orderCache";
+
+// 获取表单字段值
+function getField(id) {
+    return document.getElementById(id)?.value.trim() || '';
 }
 
-function queryData() {
-  const input = document.getElementById("trackingNumber").value.trim();
-  if (!input) return alert("请输入快递单号");
-  if (allRecords.length === 0) return showStatus("请先加载缓存", "error");
-
-  let match = allRecords.find(item => item.trackingNumber === input);
-  if (!match && input.length === 5) {
-    match = allRecords.find(item => item.trackingNumber?.slice(-5) === input);
-  }
-  if (match) {
-    lastFetched = match;
-    matchedTrackingNumber = match.trackingNumber;
-    updateDisplay(match);
-  } else {
-    showStatus("未在缓存中找到该快递单号", "error");
-  }
+// 设置表单字段值
+function setField(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
 }
 
-function updateDisplay(data) {
-  document.getElementById("companyData").textContent = data.company || "-";
-  document.getElementById("productData").textContent = data.product || "-";
-  document.getElementById("customerData").textContent = data.customer || "-";
-  document.getElementById("knownPrice").textContent = data.price || "-";
-  showStatus("✅ 查询成功", "success");
+// 转换为数字，非法值返回0
+function parseOrZero(val) {
+    return parseFloat(val) || 0;
 }
 
-function addToCache() {
-  const price = document.getElementById("enteredPrice").value.trim();
-  const number = matchedTrackingNumber || document.getElementById("trackingNumber").value.trim();
-  if (!price || !lastFetched.company || !number) return showStatus("请查询并填写金额", "error");
-
-  const alreadyExists = pendingSubmissions.some(item => item.trackingNumber === number);
-  if (alreadyExists) return showStatus("该快递单号已存在于缓存中", "error");
-
-  pendingSubmissions.push({
-    trackingNumber: number,
-    company: lastFetched.company,
-    customer: lastFetched.customer,
-    product: lastFetched.product,
-    enteredPrice: price
-  });
-  clearForm();
-  renderPreview();
-  showStatus("✅ 已加入缓存", "success");
-}
-
-function renderPreview() {
-  const box = document.getElementById("previewList");
-  box.innerHTML = "";
-  pendingSubmissions.forEach((item, i) => {
-    const line = document.createElement("div");
-    line.innerHTML = `<div>${item.trackingNumber} - ${item.customer} - ${parseFloat(item.enteredPrice).toFixed(2)}</div><button class='del-btn' onclick='removeItem(${i})' title='删除记录'>×</button>`;
-    box.appendChild(line);
-  });
-  renderTicket();
-  updateCustomerDropdown();
-}
-
-function updateCustomerDropdown() {
-  const uniqueNames = [...new Set(pendingSubmissions.map(r => r.customer))];
-  const sel = document.getElementById("ticketSelector");
-  sel.innerHTML = '<option value="">请选择客户</option>';
-  uniqueNames.forEach(name => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    sel.appendChild(opt);
-  });
-}
-
-function removeItem(i) {
-  pendingSubmissions.splice(i, 1);
-  renderPreview();
-}
-
-function clearCache() {
-  pendingSubmissions = [];
-  renderPreview();
-  clearForm();
-  document.getElementById("ticketSelector").value = "";
-  renderTicket();
-  document.getElementById("ticketPreview").innerHTML = "";
-  showStatus("缓存与表单清除成功", "success");
-}
-
-
+// 清空表单
 function clearForm() {
-  document.getElementById("trackingNumber").value = "";
-  document.getElementById("enteredPrice").value = "";
-  document.getElementById("companyData").textContent = "-";
-  document.getElementById("productData").textContent = "-";
-  document.getElementById("customerData").textContent = "-";
-  document.getElementById("knownPrice").textContent = "-";
-  matchedTrackingNumber = "";
-  lastFetched = {};
+    document.querySelectorAll("input, select").forEach(el => el.value = "");
+    updateSummary();
 }
 
-function submitAll() {
-  if (pendingSubmissions.length === 0) return showStatus("缓存为空", "error");
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "submitBatch", list: pendingSubmissions })
-  })
-  .then(r => r.json())
-  .then(res => {
-    if (res.message) {
-      showStatus(res.message, "success");
-      pendingSubmissions = [];
-      renderPreview();
-      clearForm();
-      document.getElementById("ticketSelector").value = "";
-    } else {
-      showStatus("提交失败", "error");
+// 💰 客户加价率 (全局定义)
+const MARKUP_MAP = {
+    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+};
+
+// 实时计算小计和总计
+function updateSummary() {
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const fee = parseOrZero(getField("foreignShipping"));
+    const customer = getField("customer");
+
+    const { subtotal, total } = calculateTotal(quantity, price, fee, customer);
+    
+    // ✅ 直接更新 DOM
+    document.getElementById("subtotal").textContent = subtotal;
+    document.getElementById("total").textContent = total;
+}
+
+// 计算小计和总计 (优化版)
+function calculateTotal(quantity, price, fee, customer) {
+    const subtotal = (quantity * price) + fee;
+    const markupRate = MARKUP_MAP[customer] || 0;
+
+    // **优化公式:** 总计 = (小计 / 1.6) * (1 + 加价率)
+    const total = (subtotal / 1.6) * (1 + markupRate);
+    
+    // ✅ 格式化两位小数
+    return {
+        subtotal: subtotal.toFixed(2),
+        total: total.toFixed(2)
+    };
+}
+
+// ✅ 确保表单输入触发 updateSummary()
+function bindSummaryEvents() {
+    const fields = ["quantity", "price", "foreignShipping", "customer"];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", updateSummary);
+            el.addEventListener("change", updateSummary);
+        }
+    });
+}
+
+// ✅ 页面加载完成后绑定事件
+document.addEventListener("DOMContentLoaded", bindSummaryEvents);
+
+
+// 💾 缓存快递草稿 (修正版)
+function cacheExpress() { 
+    const orderNumber = String(getField("orderNumber")).trim();
+    const trackingNumber = String(getField("trackingNumber")).trim();
+    const customer = getField("customer");
+    const company = getField("company");
+    const product = getField("product");
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const foreignShipping = parseOrZero(getField("foreignShipping"));
+
+    // ✅ 确保 cache 是一个数组
+    let cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+
+    // **⚠️ 确保转换成功**
+    if (!Array.isArray(cache)) cache = [];
+
+    // ✅ 允许空快递单号
+    cache.push({ trackingNumber, customer, company, product, quantity, price, foreignShipping });
+    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
+    alert("快递草稿已缓存 ✅");
+    clearForm();
+}
+
+// 计算小计和总计函数
+function calculateTotal(quantity, price, fee, customer) {
+    const subtotal = quantity * price + fee;
+    const markupMap = {
+        "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+        "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+    };
+    const markupRate = markupMap[customer] || 0;
+    const total = (subtotal / 1.6) * (1 + markupRate);
+    return { subtotal: subtotal.toFixed(2), total: total.toFixed(2) };
+}
+
+// 编辑订单缓存
+function editOrderCache(index) {
+    const cache = JSON.parse(localStorage.getItem("orderCache") || "[]");
+    const item = cache[index];
+    if (!item) return alert("找不到该订单");
+
+    // 填充表单数据
+    setField("orderNumber", String(item.orderNumber || "").trim());
+    setField("trackingNumber", String(item.trackingNumber || "").trim());
+    setField("company", item.company || "");
+    setField("customer", item.customer|| "");
+    setField("product", item.product|| "");
+    setField("quantity", item.quantity|| "");
+    setField("price", item.price|| "");
+    setField("foreignShipping", item.foreignShipping|| "");
+    updateSummary();
+
+    // 从缓存中移除已编辑的项
+    cache.splice(index, 1);
+    localStorage.setItem("orderCache", JSON.stringify(cache));
+
+    alert("订单已加载到表单，请修改后重新缓存");
+    closeOrderModal();
+}
+
+// ✅ 修正版 editExpressCache (确保订单号填充)
+function editExpressCache(index) {
+    const cache = JSON.parse(localStorage.getItem("expressCache") || "[]");
+    const item = cache[index];
+    if (!item) return alert("找不到该快递");
+
+    // ✅ 填充表单数据 (确保订单号)
+    setField("orderNumber", String(item.orderNumber || "").trim());
+    setField("trackingNumber", String(item.trackingNumber || "").trim());
+    setField("company", item.company || "");
+    setField("customer", item.customer || "");
+    setField("product", item.product || "");
+    setField("quantity", item.quantity || "");
+    setField("price", item.price || "");
+    setField("foreignShipping", item.foreignShipping || "");
+    updateSummary();
+
+    // ✅ 从缓存中移除已编辑的项 (确保不会重复)
+    cache.splice(index, 1);
+    localStorage.setItem("expressCache", JSON.stringify(cache));
+
+    alert("快递已加载到表单，请修改后重新缓存");
+    closeExpressModal();
+}
+
+
+// 💾 缓存快递草稿 (修正版)
+function cacheExpress() { 
+    const orderNumber = String(getField("orderNumber")).trim(); 
+    const trackingNumber = String(getField("trackingNumber")).trim();
+    const customer = getField("customer");
+    const company = getField("company");
+    const product = getField("product");
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const foreignShipping = parseOrZero(getField("foreignShipping"));
+
+    // ✅ 确保 cache 是一个数组
+    let cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    if (!Array.isArray(cache)) cache = [];
+
+    // ✅ 加入 orderNumber
+    cache.push({ 
+        orderNumber: orderNumber || "",  // ✅ 确保包含订单号
+        trackingNumber: trackingNumber || "", 
+        customer: customer || "", 
+        company: company || "", 
+        product: product || "", 
+        quantity: quantity.toString(), 
+        price: price.toString(), 
+        foreignShipping: foreignShipping.toString() 
+    });
+
+    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
+    alert("快递草稿已缓存 ✅");
+    clearForm();
+}
+
+function previewOrderCache() {
+    const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    const container = document.getElementById("orderCacheList");
+    if (!list.length) return alert("暂无缓存订单");
+
+    // ✅ 显示商品和客户
+    container.innerHTML = list.map((item, i) => `
+        <li>
+            <label>
+                <input type='checkbox' name='orderIndex' value='${i}'>
+                商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"}
+            </label>
+            <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
+            <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
+        </li>`).join("");
+
+    document.getElementById("orderCacheModal").style.display = "flex";
+}
+
+
+
+
+// 💾 缓存订单草稿
+function cacheOrder() {
+    const orderNumber = String(getField("orderNumber")).trim(); 
+    const trackingNumber = getField("trackingNumber");
+    const company = getField("company");
+    const customer = getField("customer");
+    const product = getField("product");
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const foreignShipping = parseOrZero(getField("foreignShipping"));
+
+    if (!orderNumber) return alert("订单号不能为空");
+
+    const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    cache.push({ orderNumber, trackingNumber,company,customer, product, quantity, price, foreignShipping });
+    localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(cache));
+    alert("订单草稿已缓存 ✅");
+    clearForm();
+}
+
+// 📋 预览快递缓存 (修正版)
+function previewExpressCache() {
+    const list = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    const container = document.getElementById("expressCacheList");
+    if (!list.length) return alert("暂无缓存快递");
+
+    container.innerHTML = list.map((item, i) => `
+        <li>
+            <label>
+                <input type='checkbox' name='expressIndex' value='${i}'>
+                商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"} | 快递单号: ${item.trackingNumber || "未填写"}
+            </label>
+            <button type='button' onclick='editExpressCache(${i})'>✏️ 修改</button>
+            <button type='button' onclick='deleteExpressCache(${i})'>🗑️ 删除</button>
+        </li>`).join("");
+
+    document.getElementById("expressCacheModal").style.display = "flex";
+}
+
+
+
+// ✅ 删除订单缓存
+function deleteOrderCache(index) {
+    const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    if (index >= 0 && index < cache.length) {
+        // **⚠️ 确保索引有效**
+        cache.splice(index, 1);
+        localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(cache));
+        alert("订单已删除 ✅");
+        previewOrderCache(); // **刷新列表**
     }
-  })
-  .catch(() => showStatus("提交异常", "error"));
 }
 
-function renderTicket() {
-  const name = document.getElementById("ticketSelector").value;
-  const area = document.getElementById("ticketPreview");
-
-  const filtered = pendingSubmissions.filter(r => r.customer === name);
-
-  // 如果未选客户或已无该客户记录，隐藏
-  if (!name || filtered.length === 0) {
-    area.innerHTML = "";
-    area.style.display = "none";
-    return;
-  }
-
-  area.style.display = "block";
-  let total = 0;
-  const date = new Date().toLocaleDateString();
-
-  let rowsHtml = "";
-  filtered.forEach((r, i) => {
-    const price = parseFloat(r.enteredPrice).toFixed(2);
-    total += parseFloat(price);
-    rowsHtml += `<tr>
-      <td style='width:5%'>${i + 1}.</td>
-      <td style='width:55%'>${r.trackingNumber}</td>
-      <td style='width:20%;text-align:left;'>${r.company}</td>
-      <td style='width:20%;text-align:right;'>${price}</td>
-    </tr>
-    <tr>
-      <td></td><td colspan='3'>${r.product}</td>
-    </tr>`;
-  });
-
-  const contentHeight = 400;
-  const rowHeight = 50;
-  const requiredRows = Math.floor((contentHeight - 120) / rowHeight);
-  const emptyRows = Math.max(0, requiredRows - filtered.length);
-
-  let fillerRows = "";
-  for (let i = 0; i < emptyRows; i++) {
-    fillerRows += `<tr><td colspan='4'>&nbsp;</td></tr>`;
-  }
-
-  let html = `<div class='ticket-header'>体积费 & 包裹号<br>日期：${date}<br>客户：${name}</div><br><table class='ticket-table'>`;
-  html += rowsHtml + fillerRows;
-  html += `<tr><td colspan='4'><hr></td></tr>
-           <tr><td colspan='4' class='ticket-summary'>合计：${filtered.length} 单，${total.toFixed(2)}</td></tr>`;
-  html += `</table>`;
-  area.innerHTML = html;
+// ✅ 删除快递缓存
+function deleteExpressCache(index) {
+    const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    if (index >= 0 && index < cache.length) {
+        // **⚠️ 确保索引有效**
+        cache.splice(index, 1);
+        localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
+        alert("快递已删除 ✅");
+        previewExpressCache(); // **刷新列表**
+    }
 }
 
 
 
-function downloadTicketAsImage() {
-  const target = document.getElementById("ticketPreview");
-  html2canvas(target).then(canvas => {
-    const link = document.createElement("a");
-    link.download = "ticket.jpg";
-    link.href = canvas.toDataURL("image/jpeg");
-    link.click();
-  });
+
+// ✅ 修正版 - 提交并删除快递草稿
+function submitSelectedExpresses() {
+    const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
+    let list = JSON.parse(localStorage.getItem("expressCache") || "[]");
+    let successOrderNumbers = [];
+
+    // 🚀 并行提交
+    let promises = selected.map(i => {
+        const item = list[i];
+        const { total } = calculateTotal(
+            parseOrZero(item.quantity), 
+            parseOrZero(item.price), 
+            parseOrZero(item.foreignShipping), 
+            item.customer
+        );
+
+        return fetch(EXPRESS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...item, total })
+        })
+        .then(res => res.json())
+        .then(r => {
+            if (r.message?.includes("成功")) {
+                // ✅ 确保 orderNumber 是字符串
+                successOrderNumbers.push(String(item.orderNumber).trim());
+            }
+        });
+    });
+
+    // ✅ 更新本地缓存并删除 GAS 草稿
+    Promise.all(promises).then(() => {
+        // **移除本地缓存**
+        list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
+        localStorage.setItem("expressCache", JSON.stringify(list));
+
+        // ✅ 删除 GAS 草稿 (通过 orderNumber)
+        if (successOrderNumbers.length > 0) {
+            console.log("📝 正在删除草稿:", successOrderNumbers);
+            
+            fetch(EXPRESS_WORKER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "delete",
+                    type: "express",
+                    orderNumbers: successOrderNumbers
+                })
+            })
+            .then(res => res.json())
+            .then(r => {
+                console.log("✅ GAS 草稿删除返回:", r);
+                alert(`成功提交并删除 ${successOrderNumbers.length} 条快递 ✅`);
+            })
+            .catch(err => {
+                console.error("🛑 GAS 草稿删除失败:", err);
+                alert("GAS 草稿删除失败");
+            });
+        } else {
+            alert("没有成功提交的快递草稿");
+        }
+
+        closeExpressModal();
+    });
 }
 
-function showStatus(msg, type = "success") {
-  const bar = document.getElementById("statusBar");
-  bar.textContent = msg;
-  bar.className = "status-bar " + type;
-  bar.style.display = "block";
+
+
+
+
+function submitSelectedOrders() {
+    const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
+    let list = JSON.parse(localStorage.getItem("orderCache") || "[]");
+    let successOrderNumbers = [];
+
+    // 🚀 并行提交
+    let promises = selected.map(i => {
+        const item = list[i];
+
+        // ✅ 计算 subtotal 和 total
+        const { subtotal, total } = calculateTotal(
+            parseOrZero(item.quantity), 
+            parseOrZero(item.price), 
+            parseOrZero(item.foreignShipping), 
+            item.customer
+        );
+
+        return fetch(ORDER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...item, subtotal, total })
+        })
+        .then(res => res.json())
+        .then(r => {
+            console.log("✅ 订单提交返回:", r);
+
+            // ✅ 确保 successOrderNumbers 正确累积
+            if (r.success === true || r.message?.includes("成功")) {
+                successOrderNumbers.push(String(item.orderNumber).trim());
+            }
+        })
+        .catch(err => {
+            console.error("🛑 订单提交失败:", err);
+            alert("订单提交失败");
+        });
+    });
+
+    // ✅ 更新本地缓存并删除 GAS 草稿
+    Promise.all(promises).then(() => {
+        // **⚠️ 确保缓存清理一致**
+        list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
+        localStorage.setItem("orderCache", JSON.stringify(list));
+
+        // ✅ 删除 GAS 草稿 (通过 orderNumber)
+        if (successOrderNumbers.length > 0) {
+            console.log("📝 正在删除草稿:", successOrderNumbers);
+            fetch(ORDER_WORKER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "delete",
+                    type: "order",
+                    orderNumbers: successOrderNumbers
+                })
+            })
+            .then(res => res.json())
+            .then(r => {
+                console.log("✅ GAS 草稿删除返回:", r);
+                alert(`成功提交并删除 ${successOrderNumbers.length} 条订单 ✅`);
+            })
+            .catch(err => {
+                console.error("🛑 GAS 草稿删除失败:", err);
+                alert("GAS 草稿删除失败");
+            });
+        } else {
+            alert("没有成功提交的订单草稿");
+        }
+
+        closeOrderModal();
+    });
+}
+
+
+
+
+
+
+// ⬆️ 上传快递草稿 (允许空值)
+function uploadCachedExpress() {
+    const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
+    if (!cache.length) return alert("没有快递草稿");
+
+    // ✅ 允许空值上传
+    fetch(EXPRESS_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cache)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("网络错误：" + res.status);
+        return res.json();
+    })
+    .then(r => alert(r.message || `已上传 ${cache.length} 条快递草稿 ✅`))
+    .catch(err => {
+        console.error("🛑 快递草稿上传失败:", err);
+        alert("快递草稿上传失败：" + err.message);
+    });
+}
+
+// ⬆️ 上传订单草稿 (允许空值)
+function uploadCachedOrders() {
+    const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    if (!cache.length) return alert("没有订单草稿");
+
+    // ✅ 允许空值上传
+    fetch(ORDER_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cache)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("网络错误：" + res.status);
+        return res.json();
+    })
+    .then(r => alert(r.message || `已上传 ${cache.length} 条订单草稿 ✅`))
+    .catch(err => {
+        console.error("🛑 订单草稿上传失败:", err);
+        alert("订单草稿上传失败：" + err.message);
+    });
+}
+
+// 🔄 同步订单草稿 (下载)
+function downloadCachedOrders() {
+    fetch(ORDER_WORKER_URL + "?downloadCache=1")
+        .then(res => res.json())
+        .then(data => {
+            // ✅ 列名映射
+             const mappedData = data.slice(1).map(item => ({
+                orderNumber: item.col1 || "",     // 订单号
+                customer: item.col2 || "",        // 客户名称
+                product: item.col3 || "",         // 商品名
+                trackingNumber: item.col4 || "",  // 快递单号 (如果有)
+                company: item.col5 || "",         // 快递公司 (如果有)
+                quantity: item.col6 || "",        // 数量
+                price: item.col7 || "",           // 单价
+                foreignShipping: item.col8 || ""  // 快递费 (如果有)
+            }));
+
+            // ✅ 过滤掉完全为空的数据
+            const validData = mappedData.filter(item => 
+                Object.values(item).some(v => v !== "" && v !== null && v !== undefined)
+            );
+
+            if (validData.length > 0) {
+                localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(validData));
+                alert("订单草稿已同步 ✅");
+            } else {
+                alert("没有可同步的订单草稿");
+            }
+        })
+        .catch(err => {
+            console.error("🛑 下载订单草稿失败:", err);
+            alert("订单草稿同步失败");
+        });
+}
+
+
+// 🔄 同步快递草稿 (修正版)
+function downloadCachedExpress() {
+    fetch(EXPRESS_WORKER_URL + "?downloadCache=1")
+        .then(res => res.json())
+        .then(data => {
+            // ✅ 列名映射 (确保包含 orderNumber)
+             const mappedData = data.slice(1).map(item => ({
+                orderNumber: item.col1 || "",         // 订单号
+                trackingNumber: item.col2 || "",      // 快递单号
+                customer: item.col3 || "",            // 客户名称
+                company: item.col4 || "",             // 快递公司
+                product: item.col5 || "",             // 商品名
+                quantity: item.col6 || "",            // 数量
+                price: item.col7 || "",               // 单价
+                foreignShipping: item.col8 || ""      // 快递费
+            }));
+
+            // ✅ 过滤掉完全为空的数据
+            const validData = mappedData.filter(item => 
+                Object.values(item).some(v => v !== "" && v !== null && v !== undefined)
+            );
+
+            // ✅ 确保缓存一致性
+            if (validData.length > 0) {
+                localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(validData));
+                alert("快递草稿已同步 ✅");
+            } else {
+                alert("没有可同步的快递草稿");
+            }
+        })
+        .catch(err => {
+            console.error("🛑 下载快递草稿失败:", err);
+            alert("快递草稿同步失败");
+        });
+}
+
+
+
+
+
+// 🔒 关闭弹窗
+function closeOrderModal() {
+    document.getElementById("orderCacheModal").style.display = "none";
+}
+
+function closeExpressModal() {
+    document.getElementById("expressCacheModal").style.display = "none";
 }
 </script>
+
+
+
+
+</body>
 </html>
