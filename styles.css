@@ -62,7 +62,14 @@ body {
     margin: 10px 0;
     border-bottom: 1px solid #ddd;
 }
-
+/* 📝 标题样式 */
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2em; /* 缩小字体 */
+    font-weight: bold;
+}
 /* 🌐 搜索栏 */
 .search-container {
     display: flex;
@@ -75,16 +82,16 @@ body {
 /* 🌐 搜索栏 */
 .search-input {
     flex: 1;
-    min-width: 250px; /* 缩短一点 */
-    max-width: 500px; /* 防止超长 */
-    padding: 15px;
+    max-width: 300px; /* 缩短一点 */
+    padding: 10px 15px;
     border: none;
     border-radius: 15px;
-    font-size: 1em;
+    font-size: 0.9em; /* 字体稍微小一点 */
     background-color: #f3f4f6;
     margin-right: 0;
     box-sizing: border-box;
 }
+
 
 /* 🔵 蓝色按钮 */
 .search-button {
