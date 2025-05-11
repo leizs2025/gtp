@@ -82,7 +82,7 @@ h1 {
 /* 🌐 搜索栏 */
 .search-input {
     flex: 1;
-    max-width: 300px; /* 缩短一点 */
+    max-width: 600px; /* 缩短一点 */
     padding: 10px 15px;
     border: none;
     border-radius: 15px;
@@ -105,7 +105,7 @@ h1 {
     font-weight: bold;
     transition: all 0.3s ease;
     white-space: nowrap;
-    max-width: 200px; /* 限制最大宽度 */
+    max-width: 100px; /* 限制最大宽度 */
 }
 /* 📱 移动端优化 */
 @media (max-width: 600px) {
