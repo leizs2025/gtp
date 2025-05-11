@@ -84,13 +84,24 @@ h1 {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
 
-/* 🔍 搜索框 */
+/* 🌐 搜索栏容器 */
+.search-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 0;
+}
+
+/* 🔍 搜索输入框 */
 .search-input {
     flex: 1;
-    min-width: 250px;
-    padding: 15px;
+    min-width: 200px;
+    padding: 12px 15px;
     border: none;
-    border-radius: 15px;
+    border-radius: 12px;
     font-size: 1em;
     background-color: #f3f4f6;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -103,13 +114,13 @@ h1 {
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* 🚀 按钮 */
+/* 🚀 搜索按钮 */
 .search-button {
-    padding: 15px 30px;
+    padding: 12px 20px;
     background-color: #4caf50;
     color: #fff;
     border: none;
-    border-radius: 15px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 1em;
     font-weight: bold;
@@ -132,14 +143,14 @@ h1 {
 
 /* 📱 小屏优化 */
 @media (max-width: 600px) {
-    .search-container {
+    .search-wrapper {
         flex-direction: column;
         align-items: stretch;
     }
 
     .search-input {
-        margin-bottom: 15px;
         min-width: 100%;
+        margin-bottom: 10px;
     }
 
     .search-button {
