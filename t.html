@@ -52,6 +52,7 @@
         }
         .search-container {
             display: flex;
+            flex-wrap: wrap; /* 允许换行 */
             gap: 15px;
             margin-bottom: 20px;
             background-color: #ffffff;
@@ -59,45 +60,82 @@
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
         }
-        .search-input {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            font-size: 1em;
-            background-color: #f3f4f6;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-        .search-button {
-            padding: 15px 30px;
-            background-color: #4caf50;
-            color: #fff;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 15px rgba(76, 175, 80, 0.2);
-        }
-        .search-button:hover {
-            background-color: #45a049;
-            box-shadow: 0 12px 20px rgba(76, 175, 80, 0.3);
-            transform: translateY(-2px);
-        }
-        .search-button:active {
-            background-color: #388e3c;
-            transform: translateY(2px);
-            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.2);
-        }
+        
+        /* 确保按钮在小屏幕下不会太大 */
+/* 🚀 搜索输入框 */
+/* 🔍 搜索输入框 */
+.search-input {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 15px;
+    font-size: 1em;
+    background-color: #f3f4f6;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-right: 15px;
+}
+
+/* 🔵 蓝色按钮 */
+.search-button {
+    padding: 15px 30px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 15px rgba(0, 123, 255, 0.2);
+    height: 100%; /* 保持和输入框同高 */
+    white-space: nowrap; /* 防止按钮文字换行 */
+}
+
+/* 🖱️ 悬停效果 */
+.search-button:hover {
+    background-color: #0056b3;
+    box-shadow: 0 12px 20px rgba(0, 123, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* 👆 点击效果 */
+.search-button:active {
+    background-color: #003f7f;
+    transform: translateY(2px);
+    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.2);
+}
+
+/* 🌐 整体布局 */
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 0;
+    background-color: transparent;
+}
+
+
+/* 📐 为更小屏幕优化布局 */
+@media (min-width: 600px) {
+    .search-input {
+        flex: 1 1 auto;
+        width: auto;
+    }
+    .search-button {
+        flex: 0 1 auto;
+        width: auto;
+    }
+}
     </style>
 </head>
 <body>
     <h1 class="text-3xl font-bold mb-6">Google Sheets 数据显示</h1>
-    <div class="search-container">
+    <div class="search-wrapper">
         <input type="text" id="searchInput" placeholder="🔍 请输入快递单号、货物或客户名称..." class="search-input">
         <button id="searchButton" class="search-button">🚀 搜索</button>
     </div>
+    
     <div id="expressContainer" class="grid-container"></div>
     <div id="warehouseContainer" class="grid-container" style="display:none;"></div>
     <script>
