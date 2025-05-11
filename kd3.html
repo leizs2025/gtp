@@ -3,23 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>快递与入库数据显示</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+    <title>Google Sheets 数据显示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="./app.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 15px; background: linear-gradient(135deg, #f0f4f8, #d9e6f2); }
-        .card { background-color: #ffffff; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15); }
-        .card-header { font-weight: bold; font-size: 1.2em; margin-bottom: 10px; word-break: break-word; color: #333; }
-        .card-content { display: none; padding-top: 10px; border-top: 1px solid #eee; word-break: break-word; color: #555; }
-        .card.open .card-content { display: block; animation: fadeIn 0.3s ease; }
-        .search-input { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 20px; font-size: 1em; background-color: #f9f9f9; }
-        .no-results { color: #777; text-align: center; margin-top: 20px; font-weight: bold; font-size: 1.1em; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        .card { background-color: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); cursor: pointer; }
+        .card-header { font-weight: bold; font-size: 1.1em; margin-bottom: 10px; }
+        .card-content { display: none; padding-top: 10px; border-top: 1px solid #eee; }
+        .card.open .card-content { display: block; }
+        .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
+        .search-input { flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1em; }
+        .search-button { 
+            padding: 15px 30px; 
+            background-color: #4caf50; 
+            color: #fff; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-size: 1em; 
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 15px rgba(76, 175, 80, 0.2);
+        }
+        .search-button:hover { 
+            background-color: #45a049; 
+            box-shadow: 0 12px 20px rgba(76, 175, 80, 0.3); 
+            transform: translateY(-2px);
+        }
+        .search-button:active {
+            background-color: #388e3c;
+            transform: translateY(2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.2);
+        }
+        .no-results { color: #777; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">📦 快递与入库数据显示</h1>
-    <input type="text" id="searchInput" placeholder="🔍 搜索快递单号、货物或客户..." class="search-input">
+    <h1 class="text-3xl font-bold mb-6">Google Sheets 数据显示</h1>
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="🔍 请输入快递单号、货物或客户名称..." class="search-input">
+        <button id="searchButton" class="search-button">🚀 搜索</button>
+    </div>
     <div id="expressContainer"></div>
     <div id="warehouseContainer" style="display:none;"></div>
     <script>
@@ -42,6 +67,11 @@
                 }
             }
         }
+        document.getElementById("searchButton").addEventListener("click", () => {
+            const searchEvent = new Event("input", { bubbles: true });
+            document.getElementById("searchInput").dispatchEvent(searchEvent);
+        });
+        
         function cleanOrderNumber(orderNumber) {
             // 移除 ' 前缀，并保留字母和数字
             if (typeof orderNumber === 'string') {
@@ -51,18 +81,29 @@
             }
             return "";
         }
-        function renderExpressData(sheet) {
-            const container = document.getElementById("expressContainer");
-            const headers = sheet.headers || [];
-            const rows = (sheet.rows || []).filter(row => row.length > 0 && row[0] !== "");
-            console.log("Rendering Express Data:", rows);
+        function renderWarehouseData(query) {
+            const container = document.getElementById("warehouseContainer");
+            const data = window.warehouseData;
+            // 正确处理运费列，并隐藏编号
+            const headers = data.headers.map((h, i) => i === 6 ? "运费" : h).filter(h => h !== "编号" && h !== "" && h !== undefined);
+            const rows = (data.rows || []).filter(row => {
+                const orderNumber = cleanOrderNumber(row[0]);
+                const orderLast5 = orderNumber.slice(-5);  // 后5位
+                const cargoName = (row[2] || "").toLowerCase();
+                const customerName = (row[3] || "").toLowerCase();
+                return orderNumber.includes(query) || orderLast5.includes(query) || cargoName.includes(query) || customerName.includes(query);
+            });
+            console.log("Rendering Warehouse Data:", rows);
             container.style.display = rows.length ? "block" : "none";
             container.innerHTML = rows.map(row => {
-                const title = `${row[3] || '未知货物'} (${row[4] || '未知客户'})`;
+                const title = `${row[2] || '未知货物'} (${row[3] || '未知客户'})`;
                 const content = headers.map((header, index) => {
-                    const value = row[index] || "";
-                    // 隐藏空的表头
-                    if (value === "" || value === null || value === undefined) return "";
+                    let value = row[index] || "";
+                    // 确保运费 (数据6) 正常显示
+                    if (header === "运费") {
+                        value = row[6] || "";  // 强制使用数据6作为运费
+                        if (value === "" || value === 0 || value === null || value === undefined) return "";
+                    }
                     return `<p><strong>${header}:</strong> ${value}</p>`;
                 }).filter(Boolean).join("");
                 return `<div class="card" onclick="this.classList.toggle('open')">
@@ -70,10 +111,44 @@
                             <div class="card-content">${content}</div>
                         </div>`;
             }).join("");
-            if (!rows.length) {
-                container.innerHTML = '<p class="no-results">没有找到符合条件的数据。</p>';
-            }
         }
+        function renderExpressData(sheet) {
+        const container = document.getElementById("expressContainer");
+        const headers = sheet.headers || [];
+        const rows = (sheet.rows || []).filter(row => row.length > 0 && row[0] !== "");
+        
+        console.log("Rendering Express Data:", rows);
+        container.style.display = rows.length ? "block" : "none";
+        
+        // 渲染数据
+        container.innerHTML = rows.map(row => {
+            const title = `${row[3] || '未知货物'} (${row[4] || '未知客户'})`;
+
+            // 过滤掉空值字段
+            const content = headers.map((header, index) => {
+                const value = row[index] || "";
+                
+                // 过滤空值和空字符串
+                if (value === "" || value === null || value === undefined) return "";
+                
+                return `<p><strong>${header}:</strong> ${value}</p>`;
+            }).filter(Boolean).join("");
+
+            // 如果过滤后内容为空，则不显示此卡片
+            if (content.trim() === "") return "";
+
+            return `
+                <div class="card" onclick="this.classList.toggle('open')">
+                    <div class="card-header">${title}</div>
+                    <div class="card-content">${content}</div>
+                </div>`;
+        }).filter(Boolean).join("");
+
+        // 如果没有有效数据，显示“没有找到符合条件的数据”
+        if (!rows.length) {
+            container.innerHTML = '<p class="no-results">没有找到符合条件的数据。</p>';
+        }
+    }
         document.getElementById("searchInput").addEventListener("input", event => {
             const query = cleanOrderNumber(event.target.value);
             const data = JSON.parse(localStorage.getItem("sheetData"));
