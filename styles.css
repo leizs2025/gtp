@@ -70,14 +70,7 @@ h1 {
     font-size: 1.5em; /* 缩小字体 */
     font-weight: bold;
 }
-/* 🌐 搜索栏 */
-.search-container {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    align-items: center;
-}
+
 
 /* 🌐 搜索栏 */
 .search-input {
@@ -103,17 +96,7 @@ h1 {
     transition: all 0.3s ease;
     white-space: nowrap;
     
-    /* 📱 移动端优化 */
-@media (max-width: 600px) {
-    .search-container {
-        flex-direction: column;
-        gap: 10px;
-    }
-    .search-input,
-    .search-button {
-        width: 100%;
-    }
-}
+
 .search-button:hover {
     background-color: #0056b3;
 }
