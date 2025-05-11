@@ -82,16 +82,16 @@ h1 {
 /* 🌐 搜索栏 */
 .search-input {
     flex: 1;
-    max-width: 600px; /* 缩短一点 */
-    padding: 10px 15px;
+    min-width: 250px; /* 缩短一点 */
+    max-width: 500px; /* 防止超长 */
+    padding: 15px;
     border: none;
     border-radius: 15px;
-    font-size: 0.9em; /* 字体稍微小一点 */
+    font-size: 1em;
     background-color: #f3f4f6;
     margin-right: 0;
     box-sizing: border-box;
 }
-
 
 /* 🔵 蓝色按钮 */
 .search-button {
@@ -105,7 +105,7 @@ h1 {
     font-weight: bold;
     transition: all 0.3s ease;
     white-space: nowrap;
-    max-width: 100px; /* 限制最大宽度 */
+    max-width: 200px; /* 限制最大宽度 */
 }
 /* 📱 移动端优化 */
 @media (max-width: 600px) {
@@ -118,7 +118,6 @@ h1 {
         width: 100%;
     }
 }
-/* 🖱️ 悬停效果 */
 .search-button:hover {
     background-color: #0056b3;
 }
