@@ -1,0 +1,108 @@
+/* 📝 全局样式 */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f7f9fc;
+    margin: 0;
+    padding: 20px;
+}
+
+/* 📋 无缝条目 */
+.card {
+    padding: 15px 20px;
+    margin-bottom: 1px;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+/* 🚀 悬停效果 */
+.card:hover {
+    background-color: #f3f4f6;
+}
+
+/* 📂 标题 */
+.card-header {
+    font-weight: bold;
+    font-size: 1em;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ➕ 展开按钮 */
+.card-toggle {
+    font-size: 0.8em;
+    color: #007bff;
+    cursor: pointer;
+}
+
+/* 📝 内容区域 */
+.card-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, padding 0.3s ease;
+}
+
+/* 📜 展开状态 */
+.card.open .card-content {
+    max-height: 500px;
+    padding-top: 10px;
+}
+
+/* 📄 文本 */
+.card p {
+    margin: 5px 0;
+    color: #555;
+}
+
+/* 📌 分隔线 */
+.card-divider {
+    margin: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+/* 🌐 搜索栏 */
+.search-input {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 15px;
+    font-size: 1em;
+    background-color: #f3f4f6;
+    margin-right: 15px;
+}
+
+/* 🔵 蓝色按钮 */
+.search-button {
+    padding: 15px 30px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+/* 🖱️ 悬停效果 */
+.search-button:hover {
+    background-color: #0056b3;
+}
+
+/* 👆 点击效果 */
+.search-button:active {
+    background-color: #003f7f;
+}
+
+/* 🌐 整体布局 */
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 0;
+}
