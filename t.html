@@ -21,83 +21,133 @@
     <div id="warehouseContainer" style="display:none;"></div>
 
     <script>
-        let currentData = [];
-
-        // 🚀 原有数据获取逻辑
         async function fetchData() {
             try {
                 const response = await fetch("https://script.google.com/macros/s/AKfycbzCl5xJuSYRqoeCGATma0qnJQ1KJNBQynVlzi3BQHP1qjuQdOL2ZQjuTiesedM6WahazA/exec");
                 const data = await response.json();
+                console.log("Fetched Data:", data);
                 localStorage.setItem("sheetData", JSON.stringify(data));
-                currentData = data[0];
-                renderExpressData(currentData);
+                renderExpressData(data[0]);
                 window.warehouseData = data[1];
             } catch (error) {
                 console.error("数据获取失败:", error);
                 const cachedData = localStorage.getItem("sheetData");
                 if (cachedData) {
                     const parsedData = JSON.parse(cachedData);
-                    currentData = parsedData[0];
-                    renderExpressData(currentData);
+                    console.log("Loaded from cache:", parsedData);
+                    renderExpressData(parsedData[0]);
                     window.warehouseData = parsedData[1];
                 }
             }
         }
-
-        // 📝 整合无缝卡片显示
-        function renderExpressData(sheet) {
-            const container = document.getElementById("expressContainer");
-            const headers = sheet.headers || [];
-            const rows = sheet.rows || [];
-
+        document.getElementById("searchButton").addEventListener("click", () => {
+            const searchEvent = new Event("input", { bubbles: true });
+            document.getElementById("searchInput").dispatchEvent(searchEvent);
+        });
+        
+        function cleanOrderNumber(orderNumber) {
+            // 移除 ' 前缀，并保留字母和数字
+            if (typeof orderNumber === 'string') {
+                const cleaned = orderNumber.replace(/^'/, '').trim();
+                console.log("Cleaned Order Number:", cleaned);
+                return cleaned.toLowerCase();
+            }
+            return "";
+        }
+        function renderWarehouseData(query) {
+            const container = document.getElementById("warehouseContainer");
+            const data = window.warehouseData;
+            // 正确处理运费列，并隐藏编号
+            const headers = data.headers.map((h, i) => i === 6 ? "运费" : h).filter(h => h !== "编号" && h !== "" && h !== undefined);
+            const rows = (data.rows || []).filter(row => {
+                const orderNumber = cleanOrderNumber(row[0]);
+                const orderLast5 = orderNumber.slice(-5);  // 后5位
+                const cargoName = (row[2] || "").toLowerCase();
+                const customerName = (row[3] || "").toLowerCase();
+                return orderNumber.includes(query) || orderLast5.includes(query) || cargoName.includes(query) || customerName.includes(query);
+            });
+            console.log("Rendering Warehouse Data:", rows);
+            container.style.display = rows.length ? "block" : "none";
             container.innerHTML = rows.map(row => {
-                const title = `${row[3] || '未知货物'} (${row[4] || '未知客户'})`;
-                const content = headers.map((header, index) => row[index] ? `<p>${header}: ${row[index]}</p>` : "").join("");
-                
-                return `
-                    <div class="card" onclick="toggleCard(this)">
-                        <div class="card-header">
-                            ${title}
-                            <span class="card-toggle">查看详情</span>
-                        </div>
-                        <div class="card-divider"></div>
-                        <div class="card-content">
-                            ${content}
-                        </div>
-                    </div>
-                `;
+                const title = `${row[2] || '未知货物'} (${row[3] || '未知客户'})`;
+                const content = headers.map((header, index) => {
+                    let value = row[index] || "";
+                    // 确保运费 (数据6) 正常显示
+                    if (header === "运费") {
+                        value = row[6] || "";  // 强制使用数据6作为运费
+                        if (value === "" || value === 0 || value === null || value === undefined) return "";
+                    }
+                    return `<p><strong>${header}:</strong> ${value}</p>`;
+                }).filter(Boolean).join("");
+                return `<div class="card" onclick="this.classList.toggle('open')">
+                            <div class="card-header">${title}</div>
+                            <div class="card-content">${content}</div>
+                        </div>`;
             }).join("");
         }
+        function renderExpressData(sheet) {
+        const container = document.getElementById("expressContainer");
+        const headers = sheet.headers || [];
+        const rows = (sheet.rows || []).filter(row => row.length > 0 && row[0] !== "");
+        
+        console.log("Rendering Express Data:", rows);
+        container.style.display = rows.length ? "block" : "none";
+        
+        // 渲染数据
+        container.innerHTML = rows.map(row => {
+            const title = `${row[3] || '未知货物'} (${row[4] || '未知客户'})`;
 
-        // 📂 卡片展开/收起
-        function toggleCard(card) {
-            card.classList.toggle("open");
-            const toggleText = card.querySelector(".card-toggle");
-            toggleText.textContent = card.classList.contains("open") ? "收起" : "查看详情";
+            // 过滤掉空值字段
+            const content = headers.map((header, index) => {
+                const value = row[index] || "";
+                
+                // 过滤空值和空字符串
+                if (value === "" || value === null || value === undefined) return "";
+                
+                return `<p><strong>${header}:</strong> ${value}</p>`;
+            }).filter(Boolean).join("");
+
+            // 如果过滤后内容为空，则不显示此卡片
+            if (content.trim() === "") return "";
+
+            return `
+                <div class="card" onclick="this.classList.toggle('open')">
+                    <div class="card-header">${title}</div>
+                    <div class="card-content">${content}</div>
+                </div>`;
+        }).filter(Boolean).join("");
+
+        // 如果没有有效数据，显示“没有找到符合条件的数据”
+        if (!rows.length) {
+            container.innerHTML = '<p class="no-results">没有找到符合条件的数据。</p>';
         }
-
-        // 🔍 搜索逻辑
-        function handleSearch(query) {
-            const filteredData = {
-                headers: currentData.headers,
-                rows: currentData.rows.filter(row => 
-                    row.some(cell => (cell || "").toString().toLowerCase().includes(query.toLowerCase()))
-                )
-            };
-            renderExpressData(filteredData);
-        }
-
-        // 🚀 事件绑定
-        document.getElementById("searchInput").addEventListener("input", (e) => {
-            handleSearch(e.target.value);
+    }
+        document.getElementById("searchInput").addEventListener("input", event => {
+            const query = cleanOrderNumber(event.target.value);
+            const data = JSON.parse(localStorage.getItem("sheetData"));
+            const expressData = data[0];
+            const warehouseData = data[1];
+            
+            // 如果查询的是快递单号或客户名
+            if (query.length > 0) {
+                const warehouseMatch = warehouseData.rows.some(row => {
+                    const orderNumber = cleanOrderNumber(row[0]);
+                    const customerName = (row[3] || "").toLowerCase();
+                    const cargoName = (row[2] || "").toLowerCase();
+                    return orderNumber.includes(query) || customerName.includes(query) || cargoName.includes(query);
+                });
+                if (warehouseMatch) {
+                    document.getElementById("expressContainer").style.display = "none";
+                    renderWarehouseData(query);
+                } else {
+                    document.getElementById("expressContainer").style.display = "block";
+                    renderExpressData(expressData);
+                }
+            } else {
+                document.getElementById("expressContainer").style.display = "block";
+                document.getElementById("warehouseContainer").style.display = "none";
+            }
         });
-
-        document.getElementById("searchButton").addEventListener("click", () => {
-            const query = document.getElementById("searchInput").value;
-            handleSearch(query);
-        });
-
-        // 🚀 初始化数据
         fetchData();
     </script>
 </body>
