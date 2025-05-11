@@ -72,40 +72,27 @@ h1 {
 }
 
 
-/* 🌐 搜索栏 */
-.search-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-    background-color: #ffffff;
-    padding: 15px;
-    border-radius: 15px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-}
-
 /* 🌐 搜索栏容器 */
 .search-wrapper {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     width: 100%;
     margin-bottom: 20px;
-    padding: 0;
 }
 
 /* 🔍 搜索输入框 */
 .search-input {
-    flex: 1;
-    min-width: 200px;
-    padding: 12px 15px;
+    flex-grow: 1;
+    padding: 15px;
     border: none;
-    border-radius: 12px;
+    border-radius: 15px;
     font-size: 1em;
     background-color: #f3f4f6;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
+    min-width: 0; /* 防止扩散 */
 }
 
 .search-input:focus {
@@ -116,17 +103,18 @@ h1 {
 
 /* 🚀 搜索按钮 */
 .search-button {
-    padding: 12px 20px;
+    padding: 15px 30px;
     background-color: #4caf50;
     color: #fff;
     border: none;
-    border-radius: 12px;
+    border-radius: 15px;
     cursor: pointer;
     font-size: 1em;
     font-weight: bold;
     transition: all 0.3s ease;
     box-shadow: 0 8px 15px rgba(76, 175, 80, 0.2);
     flex-shrink: 0;
+    height: 54px; /* 确保高度一致 */
 }
 
 .search-button:hover {
@@ -144,25 +132,19 @@ h1 {
 /* 📱 小屏优化 */
 @media (max-width: 600px) {
     .search-wrapper {
-        flex-direction: column;
-        align-items: stretch;
+        flex-wrap: wrap;
     }
 
     .search-input {
+        flex-grow: 1;
         min-width: 100%;
         margin-bottom: 10px;
     }
 
     .search-button {
         width: 100%;
+        height: 54px;
     }
 }
 
-/* 🌐 整体布局 */
-.search-wrapper {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 20px;
-    padding: 0;
-}
+
