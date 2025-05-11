@@ -3,122 +3,164 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Google Sheets 数据显示</title>
-                <style>
-            body {
-                font-family: Arial, sans-serif;
-                background: linear-gradient(135deg, #f3f4f6 0%, #dfe4ea 100%);
-                background-attachment: fixed;
-                padding: 20px;
-                min-height: 100vh;
-                overflow-x: hidden;
-            }
-            .container {
-                max-width: 900px;
-                margin: auto;
-            }
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                color: #333;
-                background-color: #ffffff;
-                border-radius: 15px;
-                padding: 20px 0;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-                font-size: 2.5em;
-                font-weight: bold;
-                background-image: url('https://www.transparenttextures.com/patterns/white-wave.png');
-            }
-            .search-container {
-                display: flex;
-                gap: 15px;
-                margin-bottom: 20px;
-                background-color: #ffffff;
-                padding: 15px;
-                border-radius: 15px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            }
-            .search-input {
-                flex: 1;
-                padding: 15px;
-                border: none;
-                border-radius: 15px;
-                font-size: 1em;
-                background-color: #f3f4f6;
-                box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
-            }
-            .search-button {
-                padding: 15px 30px;
-                background-color: #4caf50;
-                color: #fff;
-                border: none;
-                border-radius: 15px;
-                cursor: pointer;
-                font-size: 1em;
-                font-weight: bold;
-                transition: all 0.3s ease;
-                box-shadow: 0 8px 15px rgba(76, 175, 80, 0.2);
-            }
-            .search-button:hover {
-                background-color: #45a049;
-                box-shadow: 0 12px 20px rgba(76, 175, 80, 0.3);
-                transform: translateY(-2px);
-            }
-            .search-button:active {
-                background-color: #388e3c;
-                transform: translateY(2px);
-                box-shadow: 0 6px 15px rgba(76, 175, 80, 0.2);
-            }
-            .card {
-                background-color: #ffffff;
-                border-radius: 15px;
-                margin-bottom: 20px;
-                padding: 20px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-                cursor: pointer;
-                transition: all 0.3s ease;
-                background-image: url('https://www.transparenttextures.com/patterns/white-diamond.png');
-            }
-            .card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
-            }
-            .card-header {
-                font-weight: bold;
-                font-size: 1.2em;
-                margin-bottom: 10px;
-                color: #333;
-            }
-            .card-content {
-                display: none;
-                border-top: 1px solid #ddd;
-                padding-top: 15px;
-            }
-            .card.open .card-content {
-                display: block;
-                animation: fadeIn 0.3s ease;
-            }
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(-10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            .no-results {
-                color: #777;
-                text-align: center;
-                margin-top: 20px;
-                background-color: #ffffff;
-                border-radius: 15px;
-                padding: 20px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            }
-        </style>
+        <title>快递/入库显示</title>
+<style>
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f7f9fc;
+    margin: 0;
+    padding: 20px;
+}
+
+/* 📋 无缝条目 */
+.card {
+    padding: 15px 20px;
+    margin-bottom: 1px;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+/* 🚀 悬停效果 */
+.card:hover {
+    background-color: #f3f4f6;
+}
+
+/* 📂 标题 */
+.card-header {
+    font-weight: bold;
+    font-size: 1em;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ➕ 展开按钮 */
+.card-toggle {
+    font-size: 0.8em;
+    color: #007bff;
+    cursor: pointer;
+}
+
+/* 📝 内容区域 */
+.card-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, padding 0.3s ease;
+}
+
+/* 📜 展开状态 */
+.card.open .card-content {
+    max-height: 500px;
+    padding-top: 10px;
+}
+
+/* 📄 文本 */
+.card p {
+    margin: 5px 0;
+    color: #555;
+}
+
+/* 📌 分隔线 */
+.card-divider {
+    margin: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+/* 🌐 搜索栏 */
+.search-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* 🌐 搜索栏容器 */
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* 🔍 搜索输入框 */
+.search-input {
+    flex-grow: 1;
+    padding: 15px 20px;
+    border: none;
+    font-size: 1em;
+    background-color: #f3f4f6;
+    transition: all 0.3s ease;
+    min-width: 0;
+    border-radius: 15px 0 0 15px;
+}
+
+.search-input:focus {
+    outline: none;
+    background-color: #ffffff;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 🚀 一体化搜索按钮 */
+.search-button {
+    padding: 15px 20px;
+    background-color: #4caf50;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border-radius: 0 15px 15px 0;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.search-button:hover {
+    background-color: #45a049;
+    box-shadow: 0 10px 20px rgba(76, 175, 80, 0.2);
+}
+
+.search-button:active {
+    background-color: #388e3c;
+    transform: translateY(2px);
+    box-shadow: 0 6px 15px rgba(76, 175, 80, 0.2);
+}
+
+/* 📱 小屏优化 */
+@media (max-width: 600px) {
+    .search-wrapper {
+        flex-wrap: nowrap;
+    }
+
+    .search-input {
+        flex-grow: 1;
+        min-width: 0;
+        border-radius: 15px 0 0 15px;
+    }
+
+    .search-button {
+        flex-shrink: 0;
+        border-radius: 0 15px 15px 0;
+    }
+}
+</style>
+
 </head>
 <body>
-    <h1 class="text-3xl font-bold mb-6">Google Sheets 数据显示</h1>
-    <div class="search-container">
-        <input type="text" id="searchInput" placeholder="🔍 请输入快递单号、货物或客户名称..." class="search-input">
-        <button id="searchButton" class="search-button">🚀 搜索</button>
-    </div>
+    <h1 class="text-3xl font-bold mb-6">快递/入库显示</h1>
+ <div class="search-wrapper">
+    <input type="text" id="searchInput" placeholder="🔍 请输入快递单号或客户名称..." class="search-input">
+    <button id="searchButton" class="search-button">🚀 搜索</button>
+</div>
+
     <div id="expressContainer"></div>
     <div id="warehouseContainer" style="display:none;"></div>
     <script>
