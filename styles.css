@@ -82,15 +82,12 @@ h1 {
 /* 🌐 搜索栏 */
 .search-input {
     flex: 1;
-    min-width: 250px; /* 缩短一点 */
-    max-width: 500px; /* 防止超长 */
     padding: 15px;
     border: none;
     border-radius: 15px;
     font-size: 1em;
     background-color: #f3f4f6;
-    margin-right: 0;
-    box-sizing: border-box;
+    margin-right: 15px;
 }
 
 /* 🔵 蓝色按钮 */
@@ -105,9 +102,8 @@ h1 {
     font-weight: bold;
     transition: all 0.3s ease;
     white-space: nowrap;
-    max-width: 200px; /* 限制最大宽度 */
-}
-/* 📱 移动端优化 */
+    
+    /* 📱 移动端优化 */
 @media (max-width: 600px) {
     .search-container {
         flex-direction: column;
