@@ -269,62 +269,46 @@ function clearForm() {
     updateSummary();
 }
 
-// 💰 客户加价率 (全局定义)
-const MARKUP_MAP = {
-    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
-};
-
 // 实时计算小计和总计
 function updateSummary() {
     const quantity = parseOrZero(getField("quantity"));
     const price = parseOrZero(getField("price"));
     const fee = parseOrZero(getField("foreignShipping"));
     const customer = getField("customer");
-
+    
     const { subtotal, total } = calculateTotal(quantity, price, fee, customer);
     
-    // ✅ 直接更新 DOM
     document.getElementById("subtotal").textContent = subtotal;
     document.getElementById("total").textContent = total;
 }
 
-// 计算小计和总计 (优化版)
+// 计算小计和总计函数 (修正版)
 function calculateTotal(quantity, price, fee, customer) {
     const subtotal = (quantity * price) + fee;
-    const markupRate = MARKUP_MAP[customer] || 0;
+    
+    // 客户加价率
+    const markupMap = {
+        "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+        "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+    };
+    const markupRate = markupMap[customer] || 0;
 
-    // **优化公式:** 总计 = (小计 / 1.6) * (1 + 加价率)
+    // **修正公式:** 总计 = (小计 / 1.6) * (1 + 加价率)
     const total = (subtotal / 1.6) * (1 + markupRate);
     
-    // ✅ 格式化两位小数
+    // 格式化两位小数
     return {
         subtotal: subtotal.toFixed(2),
         total: total.toFixed(2)
     };
 }
 
-// ✅ 确保表单输入触发 updateSummary()
-function bindSummaryEvents() {
-    const fields = ["quantity", "price", "foreignShipping", "customer"];
-    fields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener("input", updateSummary);
-            el.addEventListener("change", updateSummary);
-        }
-    });
-}
-
-// ✅ 页面加载完成后绑定事件
-document.addEventListener("DOMContentLoaded", bindSummaryEvents);
-
 
 // 💾 缓存快递草稿 (修正版)
 function cacheExpress() { 
-    const orderNumber = String(getField("orderNumber")).trim();
-    const trackingNumber = String(getField("trackingNumber")).trim();
+    const orderNumber = getField("orderNumber");
+    const trackingNumber = getField("trackingNumber");
     const customer = getField("customer");
     const company = getField("company");
     const product = getField("product");
@@ -365,14 +349,12 @@ function editOrderCache(index) {
     if (!item) return alert("找不到该订单");
 
     // 填充表单数据
-    setField("orderNumber", String(item.orderNumber || "").trim());
-    setField("trackingNumber", String(item.trackingNumber || "").trim());
-    setField("company", item.company || "");
-    setField("customer", item.customer|| "");
-    setField("product", item.product|| "");
-    setField("quantity", item.quantity|| "");
-    setField("price", item.price|| "");
-    setField("foreignShipping", item.foreignShipping|| "");
+    setField("orderNumber", item.orderNumber);
+    setField("customer", item.customer);
+    setField("product", item.product);
+    setField("quantity", item.quantity);
+    setField("price", item.price);
+    setField("foreignShipping", item.foreignShipping);
     updateSummary();
 
     // 从缓存中移除已编辑的项
@@ -390,10 +372,10 @@ function editExpressCache(index) {
     if (!item) return alert("找不到该快递");
 
     // ✅ 填充表单数据 (确保订单号)
-    setField("orderNumber", String(item.orderNumber || "").trim());
-    setField("trackingNumber", String(item.trackingNumber || "").trim());
-    setField("company", item.company || "");
+    setField("orderNumber", item.orderNumber || "");
+    setField("trackingNumber", item.trackingNumber || "");
     setField("customer", item.customer || "");
+    setField("company", item.company || "");
     setField("product", item.product || "");
     setField("quantity", item.quantity || "");
     setField("price", item.price || "");
@@ -411,8 +393,8 @@ function editExpressCache(index) {
 
 // 💾 缓存快递草稿 (修正版)
 function cacheExpress() { 
-    const orderNumber = String(getField("orderNumber")).trim(); 
-    const trackingNumber = String(getField("trackingNumber")).trim();
+    const orderNumber = getField("orderNumber");
+    const trackingNumber = getField("trackingNumber");
     const customer = getField("customer");
     const company = getField("company");
     const product = getField("product");
@@ -441,17 +423,17 @@ function cacheExpress() {
     clearForm();
 }
 
+// 🔄 预览订单缓存 - 增加修改按钮功能
 function previewOrderCache() {
     const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
     const container = document.getElementById("orderCacheList");
     if (!list.length) return alert("暂无缓存订单");
 
-    // ✅ 显示商品和客户
     container.innerHTML = list.map((item, i) => `
         <li>
             <label>
                 <input type='checkbox' name='orderIndex' value='${i}'>
-                商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"}
+                订单号: ${item.orderNumber} | 客户: ${item.customer}
             </label>
             <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
             <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
@@ -460,14 +442,9 @@ function previewOrderCache() {
     document.getElementById("orderCacheModal").style.display = "flex";
 }
 
-
-
-
 // 💾 缓存订单草稿
 function cacheOrder() {
-    const orderNumber = String(getField("orderNumber")).trim(); 
-    const trackingNumber = getField("trackingNumber");
-    const company = getField("company");
+    const orderNumber = getField("orderNumber");
     const customer = getField("customer");
     const product = getField("product");
     const quantity = parseOrZero(getField("quantity"));
@@ -477,7 +454,7 @@ function cacheOrder() {
     if (!orderNumber) return alert("订单号不能为空");
 
     const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-    cache.push({ orderNumber, trackingNumber,company,customer, product, quantity, price, foreignShipping });
+    cache.push({ orderNumber, customer, product, quantity, price, foreignShipping });
     localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(cache));
     alert("订单草稿已缓存 ✅");
     clearForm();
@@ -493,7 +470,7 @@ function previewExpressCache() {
         <li>
             <label>
                 <input type='checkbox' name='expressIndex' value='${i}'>
-                商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"} | 快递单号: ${item.trackingNumber || "未填写"}
+                订单号: ${item.orderNumber || "未填写"} | 客户: ${item.customer || "未填写"} | 快递单号: ${item.trackingNumber || "未填写"}
             </label>
             <button type='button' onclick='editExpressCache(${i})'>✏️ 修改</button>
             <button type='button' onclick='deleteExpressCache(${i})'>🗑️ 删除</button>
@@ -503,7 +480,22 @@ function previewExpressCache() {
 }
 
 
+// 📋 预览订单缓存
+function previewOrderCache() {
+    const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
+    const container = document.getElementById("orderCacheList");
+    if (!list.length) return alert("暂无缓存订单");
 
+    container.innerHTML = list.map((item, i) => `
+        <li>
+            <label><input type='checkbox' name='orderIndex' value='${i}'>
+            订单号: ${item.orderNumber} | 客户: ${item.customer}</label>
+            <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
+            <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
+        </li>`).join("");
+
+    document.getElementById("orderCacheModal").style.display = "flex";
+}
 // ✅ 删除订单缓存
 function deleteOrderCache(index) {
     const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
@@ -527,9 +519,6 @@ function deleteExpressCache(index) {
         previewExpressCache(); // **刷新列表**
     }
 }
-
-
-
 
 // ✅ 修正版 - 提交并删除快递草稿
 function submitSelectedExpresses() {
@@ -596,10 +585,6 @@ function submitSelectedExpresses() {
         closeExpressModal();
     });
 }
-
-
-
-
 
 function submitSelectedOrders() {
     const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
@@ -800,6 +785,9 @@ function downloadCachedExpress() {
             alert("快递草稿同步失败");
         });
 }
+
+
+
 
 // 🔒 关闭弹窗
 function closeOrderModal() {
