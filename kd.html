@@ -198,7 +198,7 @@
     <button class="submit" title="下载快递草稿" onclick="downloadCachedExpress()">🗂️</button>
     <button class="submit" title="上传订单草稿" onclick="uploadCachedOrders()">📝</button>
     <button class="submit" title="下载订单草稿" onclick="downloadCachedOrders()">🗂️</button>
-    
+    <button onclick="openDraftsModal()">📋 草稿管理</button>
   </div>
 </div>
 <!-- ✅ 快递缓存弹窗 -->
@@ -453,9 +453,6 @@ function previewOrderCache() {
     document.getElementById("orderCacheModal").style.display = "flex";
 }
 
-
-
-
 // 💾 缓存订单草稿
 function cacheOrder() {
     const orderNumber = String(getField("orderNumber")).trim(); 
@@ -520,9 +517,6 @@ function deleteExpressCache(index) {
         previewExpressCache(); // **刷新列表**
     }
 }
-
-
-
 
 // ✅ 修正版 - 提交并删除快递草稿
 function submitSelectedExpresses() {
@@ -589,10 +583,6 @@ function submitSelectedExpresses() {
         closeExpressModal();
     });
 }
-
-
-
-
 
 function submitSelectedOrders() {
     const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
@@ -666,11 +656,6 @@ function submitSelectedOrders() {
     });
 }
 
-
-
-
-
-
 // ⬆️ 上传快递草稿 (允许空值)
 function uploadCachedExpress() {
     const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
@@ -715,30 +700,42 @@ function uploadCachedOrders() {
     });
 }
 
-// 🔄 同步订单草稿 (下载)
+// ✅ 订单去重 - 下载并融合草稿
 function downloadCachedOrders() {
     fetch(ORDER_WORKER_URL + "?downloadCache=1")
         .then(res => res.json())
         .then(data => {
-            // ✅ 列名映射
-             const mappedData = data.slice(1).map(item => ({
-                orderNumber: item.col1 || "",     // 订单号
-                customer: item.col2 || "",        // 客户名称
-                product: item.col3 || "",         // 商品名
-                trackingNumber: item.col4 || "",  // 快递单号 (如果有)
-                company: item.col5 || "",         // 快递公司 (如果有)
-                quantity: item.col6 || "",        // 数量
-                price: item.col7 || "",           // 单价
-                foreignShipping: item.col8 || ""  // 快递费 (如果有)
+            const rawData = data.slice(1);  // **跳过表头**
+
+            // **补全缺失列**
+            const downloadedData = rawData.map(item => ({
+                orderNumber: item.col1 || "",         // 订单号
+                trackingNumber: item.col2 || "",      // 快递单号 (允许为空)
+                customer: item.col3 || "",            // 客户名称
+                company: item.col4 || "",             // 快递公司 (允许为空)
+                product: item.col5 || "",             // 商品名
+                quantity: item.col6 || "0",           // 数量 (默认 0)
+                price: item.col7 || "0.00",           // 单价 (默认 0.00)
+                foreignShipping: item.col8 || "0.00"  // 快递费 (默认 0.00)
             }));
 
-            // ✅ 过滤掉完全为空的数据
-            const validData = mappedData.filter(item => 
-                Object.values(item).some(v => v !== "" && v !== null && v !== undefined)
-            );
+            // **加载本地缓存**
+            const currentCache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
 
-            if (validData.length > 0) {
-                localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(validData));
+            // **去重逻辑 - 避免重复订单**
+            const mergedData = [
+                ...currentCache,
+                ...downloadedData.filter(downloadedItem => {
+                    return !currentCache.some(cachedItem => 
+                        cachedItem.orderNumber === downloadedItem.orderNumber &&
+                        cachedItem.trackingNumber === downloadedItem.trackingNumber
+                    );
+                })
+            ];
+
+            // **保存融合后的数据**
+            if (mergedData.length > 0) {
+                localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(mergedData));
                 alert("订单草稿已同步 ✅");
             } else {
                 alert("没有可同步的订单草稿");
@@ -787,10 +784,6 @@ function downloadCachedExpress() {
         });
 }
 
-
-
-
-
 // 🔒 关闭弹窗
 function closeOrderModal() {
     document.getElementById("orderCacheModal").style.display = "none";
@@ -800,5 +793,209 @@ function closeExpressModal() {
     document.getElementById("expressCacheModal").style.display = "none";
 }
 </script>
+    <!-- 📋 草稿管理弹窗 -->
+<div id="draftsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeDraftsModal()">✖️</span>
+        <h2>📋 草稿管理</h2>
+        <button onclick="previewOrderCache()">🧾 预览订单草稿</button>
+        <button onclick="previewExpressCache()">📦 预览快递草稿</button>
+        <div id="cachePreview" class="preview-container"></div>
+    </div>
+</div>
+
+<style>
+/* 📋 弹窗样式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #888;
+}
+
+.close-btn:hover {
+    color: #f00;
+}
+
+.preview-container {
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background-color: #007bff;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    margin-top: 20px;
+}
+</style>
+
+<script>
+// 后端接口地址
+
+
+// 打开草稿弹窗
+function openDraftsModal() {
+    document.getElementById("draftsModal").style.display = "flex";
+    previewOrderCache();  // 默认显示订单草稿
+}
+
+// 关闭草稿弹窗
+function closeDraftsModal() {
+    document.getElementById("draftsModal").style.display = "none";
+    document.getElementById("cachePreview").innerHTML = "";
+}
+
+// 预览订单缓存
+function previewOrderCache() {
+    fetchDrafts(ORDER_WORKER_URL, "订单草稿");
+}
+
+// 预览快递缓存
+function previewExpressCache() {
+    fetchDrafts(EXPRESS_WORKER_URL, "快递草稿");
+}
+
+// 拉取草稿数据
+function fetchDrafts(url, title) {
+    fetch(url + "?downloadCache=1")
+        .then(res => res.json())
+        .then(data => {
+            // 跳过表头
+            const drafts = data.slice(1);
+
+            // 没有数据的情况
+            if (!drafts.length) {
+                document.getElementById("cachePreview").innerHTML = `<p class="no-data">没有可显示的 ${title}</p>`;
+                return;
+            }
+
+            // 生成表格
+            const rows = drafts.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.col1 || "未填写"}</td>
+                    <td>${item.col3 || "未填写"}</td>
+                    <td>${item.col5 || "未填写"}</td>
+                    <td>${item.col6 || "0"}</td>
+                    <td>${item.col7 || "0.00"}</td>
+                    <td>${item.col8 || "0.00"}</td>
+                    <td>
+                        <button onclick="deleteDraft('${url}', '${item.col1}')">🗑️ 删除</button>
+                    </td>
+                </tr>
+            `).join("");
+
+            // 插入表格
+            document.getElementById("cachePreview").innerHTML = `
+                <h3>${title} (${drafts.length} 条)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>订单号</th>
+                            <th>客户</th>
+                            <th>商品</th>
+                            <th>数量</th>
+                            <th>单价</th>
+                            <th>快递费</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        })
+        .catch(err => {
+            console.error("🛑 获取草稿失败:", err);
+            alert("草稿获取失败");
+        });
+}
+
+// 删除草稿
+function deleteDraft(url, orderNumber) {
+    fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            action: "delete",
+            type: url === ORDER_WORKER_URL ? "order" : "express",
+            orderNumbers: [orderNumber]
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("✅ 远程删除成功:", data);
+        alert("草稿已删除 ✅");
+
+        // 重新加载当前草稿列表
+        if (url === ORDER_WORKER_URL) {
+            previewOrderCache();
+        } else {
+            previewExpressCache();
+        }
+    })
+    .catch(err => {
+        console.error("🛑 远程删除失败:", err);
+        alert("草稿删除失败");
+    });
+}
+
+// 点击弹窗外关闭
+window.onclick = function(event) {
+    const modal = document.getElementById("draftsModal");
+    if (event.target === modal) {
+        closeDraftsModal();
+    }
+}
+</script>
+
 </body>
 </html>
