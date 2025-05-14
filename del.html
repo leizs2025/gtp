@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>草稿管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        .buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .draft-list {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #f7f7f7;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ddd;
+        }
+
+        li:nth-child(even) {
+            background-color: #f0f0f0;
+        }
+
+        button.delete-btn {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button.delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #999;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📋 草稿管理</h2>
+        <div class="buttons">
+            <button onclick="loadDrafts('order')">🧾 订单草稿</button>
+            <button onclick="loadDrafts('express')">📦 快递草稿</button>
+        </div>
+        <div id="draftList" class="draft-list">
+            <p class="no-data">请选择要查看的草稿类型</p>
+        </div>
+    </div>
+
+    <script>
+        // **后端接口地址**
+        const ORDER_WORKER_URL = "https://yjtee.jeenty.workers.dev/order";
+        const EXPRESS_WORKER_URL = "https://yjtee.jeenty.workers.dev/express";
+
+        // **加载草稿**
+        function loadDrafts(type) {
+            const url = type === "order" ? ORDER_WORKER_URL : EXPRESS_WORKER_URL;
+            const title = type === "order" ? "订单草稿" : "快递草稿";
+
+            fetch(url + "?downloadCache=1")
+                .then(res => res.json())
+                .then(data => {
+                    const drafts = data.slice(1);
+                    const draftList = document.getElementById("draftList");
+
+                    if (!drafts.length) {
+                        draftList.innerHTML = `<p class="no-data">没有可显示的 ${title}</p>`;
+                        return;
+                    }
+
+                    const items = drafts.map((item, index) => `
+                        <li>
+                            <span>#${index + 1} | 订单号: ${item.col1 || "未填写"} | 客户: ${item.col3 || "未填写"} | 商品: ${item.col5 || "未填写"}</span>
+                            <button class="delete-btn" onclick="deleteDraft('${type}', '${item.col1}')">🗑️ </button>
+                        </li>
+                    `).join("");
+
+                    draftList.innerHTML = `<ul>${items}</ul>`;
+                })
+                .catch(err => {
+                    console.error("🛑 获取草稿失败:", err);
+                    alert("草稿获取失败");
+                });
+        }
+
+        // **删除草稿**
+        function deleteDraft(type, orderNumber) {
+            const url = type === "order" ? ORDER_WORKER_URL : EXPRESS_WORKER_URL;
+            const typeName = type === "order" ? "order" : "express";
+
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "delete",
+                    type: typeName,
+                    orderNumbers: [orderNumber]
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert("草稿已删除 ✅");
+                loadDrafts(type);  // **重新加载草稿**
+            })
+            .catch(err => {
+                console.error("🛑 远程删除失败:", err);
+                alert("草稿删除失败");
+            });
+        }
+    </script>
+</body>
+</html>
