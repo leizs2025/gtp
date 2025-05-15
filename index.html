@@ -349,12 +349,14 @@ function editOrderCache(index) {
     if (!item) return alert("找不到该订单");
 
     // 填充表单数据
-    setField("orderNumber", item.orderNumber);
-    setField("customer", item.customer);
-    setField("product", item.product);
-    setField("quantity", item.quantity);
-    setField("price", item.price);
-    setField("foreignShipping", item.foreignShipping);
+    setField("orderNumber", String(item.orderNumber || "").trim());
+    setField("trackingNumber", String(item.trackingNumber || "").trim());
+    setField("company", item.company || "");
+    setField("customer", item.customer|| "");
+    setField("product", item.product|| "");
+    setField("quantity", item.quantity|| "");
+    setField("price", item.price|| "");
+    setField("foreignShipping", item.foreignShipping|| "");
     updateSummary();
 
     // 从缓存中移除已编辑的项
@@ -364,7 +366,6 @@ function editOrderCache(index) {
     alert("订单已加载到表单，请修改后重新缓存");
     closeOrderModal();
 }
-
 // ✅ 修正版 editExpressCache (确保订单号填充)
 function editExpressCache(index) {
     const cache = JSON.parse(localStorage.getItem("expressCache") || "[]");
