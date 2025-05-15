@@ -423,17 +423,17 @@ function cacheExpress() {
     clearForm();
 }
 
-// 🔄 预览订单缓存 - 增加修改按钮功能
 function previewOrderCache() {
     const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
     const container = document.getElementById("orderCacheList");
     if (!list.length) return alert("暂无缓存订单");
 
+    // ✅ 显示商品和客户
     container.innerHTML = list.map((item, i) => `
         <li>
             <label>
                 <input type='checkbox' name='orderIndex' value='${i}'>
-                订单号: ${item.orderNumber} | 客户: ${item.customer}
+                商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"}
             </label>
             <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
             <button type='button' onclick='deleteOrderCache(${i})'>🗑️ 删除</button>
