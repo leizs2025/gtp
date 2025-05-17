@@ -446,6 +446,7 @@ function previewOrderCache() {
 // 💾 缓存订单草稿
 function cacheOrder() {
     const orderNumber = getField("orderNumber");
+    const trackingNumber = getField("trackingNumber");
     const customer = getField("customer");
     const product = getField("product");
     const quantity = parseOrZero(getField("quantity"));
@@ -455,7 +456,7 @@ function cacheOrder() {
     if (!orderNumber) return alert("订单号不能为空");
 
     const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
-    cache.push({ orderNumber, customer, product, quantity, price, foreignShipping });
+    cache.push({ orderNumber, trackingNumber, customer, product, quantity, price, foreignShipping });
     localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(cache));
     alert("订单草稿已缓存 ✅");
     clearForm();
