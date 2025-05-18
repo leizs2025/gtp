@@ -596,18 +596,15 @@ function submitSelectedOrders() {
     let list = JSON.parse(localStorage.getItem("orderCache") || "[]");
     let successOrderNumbers = [];
 
-    // 🚀 并行提交
-    let promises = selected.map(i => {
+    // 🚀 并行提交 (确保累积)
+    const submissionPromises = selected.map(i => {
         const item = list[i];
-
-        // ✅ 计算 subtotal 和 total
         const { subtotal, total } = calculateTotal(
-            parseOrZero(item.quantity), 
-            parseOrZero(item.price), 
-            parseOrZero(item.foreignShipping), 
+            parseOrZero(item.quantity),
+            parseOrZero(item.price),
+            parseOrZero(item.foreignShipping),
             item.customer
         );
-
         return fetch(ORDER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -615,12 +612,10 @@ function submitSelectedOrders() {
         })
         .then(res => res.json())
         .then(r => {
-            console.log("✅ 订单提交返回:", r);
-
-            // ✅ 确保 successOrderNumbers 正确累积
             if (r.success === true || r.message?.includes("成功")) {
                 successOrderNumbers.push(String(item.orderNumber).trim());
             }
+            return r;
         })
         .catch(err => {
             console.error("🛑 订单提交失败:", err);
@@ -628,13 +623,12 @@ function submitSelectedOrders() {
         });
     });
 
-    // ✅ 更新本地缓存并删除 GAS 草稿
-    Promise.all(promises).then(() => {
-        // **⚠️ 确保缓存清理一致**
+    // ✅ 处理所有提交完成后的逻辑
+    Promise.allSettled(submissionPromises).then(results => {
+        // 只保留提交成功的订单
         list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
         localStorage.setItem("orderCache", JSON.stringify(list));
 
-        // ✅ 删除 GAS 草稿 (通过 orderNumber)
         if (successOrderNumbers.length > 0) {
             console.log("📝 正在删除草稿:", successOrderNumbers);
             fetch(ORDER_WORKER_URL, {
@@ -662,6 +656,7 @@ function submitSelectedOrders() {
         closeOrderModal();
     });
 }
+
 
 // ⬆️ 上传快递草稿 (允许空值)
 function uploadCachedExpress() {
