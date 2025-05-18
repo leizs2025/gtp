@@ -526,18 +526,19 @@ function deleteExpressCache(index) {
 }
 
 // ✅ 修正版 - 提交并删除快递草稿
+// ✅ 修正版 - 提交并删除快递草稿
 function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
     let list = JSON.parse(localStorage.getItem("expressCache") || "[]");
     let successOrderNumbers = [];
 
-    // 🚀 并行提交
-    let promises = selected.map(i => {
+    // 🚀 并行提交 (确保累积)
+    const submissionPromises = selected.map(i => {
         const item = list[i];
         const { total } = calculateTotal(
-            parseOrZero(item.quantity), 
-            parseOrZero(item.price), 
-            parseOrZero(item.foreignShipping), 
+            parseOrZero(item.quantity),
+            parseOrZero(item.price),
+            parseOrZero(item.foreignShipping),
             item.customer
         );
 
@@ -549,22 +550,24 @@ function submitSelectedExpresses() {
         .then(res => res.json())
         .then(r => {
             if (r.message?.includes("成功")) {
-                // ✅ 确保 orderNumber 是字符串
                 successOrderNumbers.push(String(item.orderNumber).trim());
             }
+            return r;
+        })
+        .catch(err => {
+            console.error("🛑 快递提交失败:", err);
+            alert("快递提交失败");
         });
     });
 
-    // ✅ 更新本地缓存并删除 GAS 草稿
-    Promise.all(promises).then(() => {
-        // **移除本地缓存**
+    // ✅ 处理所有提交完成后的逻辑
+    Promise.allSettled(submissionPromises).then(results => {
+        // 只保留提交成功的快递
         list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
         localStorage.setItem("expressCache", JSON.stringify(list));
 
-        // ✅ 删除 GAS 草稿 (通过 orderNumber)
         if (successOrderNumbers.length > 0) {
             console.log("📝 正在删除草稿:", successOrderNumbers);
-            
             fetch(EXPRESS_WORKER_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -590,6 +593,7 @@ function submitSelectedExpresses() {
         closeExpressModal();
     });
 }
+
 
 function submitSelectedOrders() {
     const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
