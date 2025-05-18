@@ -234,47 +234,70 @@ select::-ms-expand {
     </div>
   </div>
 
-<script>
-// 🌐 URL 配置
-const EXPRESS_WORKER_URL = "https://yjtee.jeenty.workers.dev/express";
-const ORDER_WORKER_URL = "https://yjtee.jeenty.workers.dev/order";
-
-// 正式提交 URL
-const EXPRESS_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas3";
-const ORDER_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas4";
-
-// 📦 缓存键
-const EXPRESS_CACHE_KEY = "expressCache";
-const ORDER_CACHE_KEY = "orderCache";
-
-// 获取表单字段值
-function getField(id) {
-    return document.getElementById(id)?.value.trim() || '';
-}
-
-// 设置表单字段值
-function setField(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
-}
-
-// 转换为数字，非法值返回0
-function parseOrZero(val) {
-    return parseFloat(val) || 0;
-}
-
-// 清空表单
-function clearForm() {
-    document.querySelectorAll("input, select").forEach(el => el.value = "");
-    updateSummary();
-}
-
-// 💰 客户加价率 (全局定义)
-const MARKUP_MAP = {
-    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-    "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-    "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
-};
+ <script>
+    // 🌐 URL 配置
+    const EXPRESS_WORKER_URL = "https://yjtee.jeenty.workers.dev/express";
+    const ORDER_WORKER_URL = "https://yjtee.jeenty.workers.dev/order";
+    
+    // 正式提交 URL
+    const EXPRESS_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas3";
+    const ORDER_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas4";
+    
+    // 📦 缓存键
+    const EXPRESS_CACHE_KEY = "expressCache";
+    const ORDER_CACHE_KEY = "orderCache";
+    
+    // 获取表单字段值
+    function getField(id) {
+        return document.getElementById(id)?.value.trim() || '';
+    }
+    
+    // 设置表单字段值
+    function setField(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    }
+    
+    // 转换为数字，非法值返回0
+    function parseOrZero(val) {
+        return parseFloat(val) || 0;
+    }
+    
+    // 清空表单
+    function clearForm() {
+        document.querySelectorAll("input, select").forEach(el => el.value = "");
+        updateSummary();
+    }
+    
+    // 💰 客户加价率 (全局定义)
+    const MARKUP_MAP = {
+        "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
+        "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
+        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+    };
+    
+    // 计算小计和总计 (优化版)
+    function calculateTotal(quantity, price, fee, customer) {
+        const subtotal = (quantity * price) + fee;
+        const markupRate = MARKUP_MAP[customer] || 0;
+        const total = (subtotal / 1.6) * (1 + markupRate);
+        return {
+            subtotal: subtotal.toFixed(2),
+            total: total.toFixed(2)
+        };
+    }
+    
+    // ✅ 确保表单输入触发 updateSummary()
+    function bindSummaryEvents() {
+        const fields = ["quantity", "price", "foreignShipping", "customer"];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("input", updateSummary);
+                el.addEventListener("change", updateSummary);
+            }
+        });
+    }
 
 // 实时计算小计和总计
 function updateSummary() {
@@ -284,56 +307,46 @@ function updateSummary() {
     const customer = getField("customer");
 
     const { subtotal, total } = calculateTotal(quantity, price, fee, customer);
-    
-    // ✅ 直接更新 DOM
     document.getElementById("subtotal").textContent = subtotal;
     document.getElementById("total").textContent = total;
-}
-
-// 计算小计和总计 (优化版)
-function calculateTotal(quantity, price, fee, customer) {
-    const subtotal = (quantity * price) + fee;
-    const markupRate = MARKUP_MAP[customer] || 0;
-
-    // **优化公式:** 总计 = (小计 / 1.6) * (1 + 加价率)
-    const total = (subtotal / 1.6) * (1 + markupRate);
-    
-    // ✅ 格式化两位小数
-    return {
-        subtotal: subtotal.toFixed(2),
-        total: total.toFixed(2)
-    };
-}
-
-// ✅ 确保表单输入触发 updateSummary()
-function bindSummaryEvents() {
-    const fields = ["quantity", "price", "foreignShipping", "customer"];
-    fields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener("input", updateSummary);
-            el.addEventListener("change", updateSummary);
-        }
-    });
 }
 
 // ✅ 页面加载完成后绑定事件
 document.addEventListener("DOMContentLoaded", bindSummaryEvents);
 
+// 💾 缓存快递草稿 (修正版)
+function cacheExpress() { 
+    const orderNumber = String(getField("orderNumber")).trim();
+    const trackingNumber = String(getField("trackingNumber")).trim();
+    const customer = getField("customer");
+    const company = getField("company");
+    const product = getField("product");
+    const quantity = parseOrZero(getField("quantity"));
+    const price = parseOrZero(getField("price"));
+    const foreignShipping = parseOrZero(getField("foreignShipping"));
 
+    // ✅ 确保 cache 是一个数组
+    let cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
 
+    // **⚠️ 确保转换成功**
+    if (!Array.isArray(cache)) cache = [];
+
+    // ✅ 允许空快递单号
+    cache.push({ trackingNumber, customer, company, product, quantity, price, foreignShipping });
+    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
+    alert("快递草稿已缓存 ✅");
+    clearForm();
+}
 
 // 计算小计和总计函数
 function calculateTotal(quantity, price, fee, customer) {
-    const subtotal = quantity * price + fee;
-    const markupMap = {
-        "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-        "龙": 0.00, "惠": 0.00, "姐": 0.01, "阿妹": 0.01,
-        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
-    };
-    const markupRate = markupMap[customer] || 0;
+    const subtotal = (quantity * price) + fee;
+    const markupRate = MARKUP_MAP[customer] || 0;
     const total = (subtotal / 1.6) * (1 + markupRate);
-    return { subtotal: subtotal.toFixed(2), total: total.toFixed(2) };
+    return {
+        subtotal: subtotal.toFixed(2),
+        total: total.toFixed(2)
+    };
 }
 
 // 编辑订单缓存
@@ -386,38 +399,6 @@ function editExpressCache(index) {
     closeExpressModal();
 }
 
-
-// 💾 缓存快递草稿 (修正版)
-function cacheExpress() { 
-    const orderNumber = String(getField("orderNumber")).trim(); 
-    const trackingNumber = String(getField("trackingNumber")).trim();
-    const customer = getField("customer");
-    const company = getField("company");
-    const product = getField("product");
-    const quantity = parseOrZero(getField("quantity"));
-    const price = parseOrZero(getField("price"));
-    const foreignShipping = parseOrZero(getField("foreignShipping"));
-
-    // ✅ 确保 cache 是一个数组
-    let cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-    if (!Array.isArray(cache)) cache = [];
-
-    // ✅ 加入 orderNumber
-    cache.push({ 
-        orderNumber: orderNumber || "",  // ✅ 确保包含订单号
-        trackingNumber: trackingNumber || "", 
-        customer: customer || "", 
-        company: company || "", 
-        product: product || "", 
-        quantity: quantity.toString(), 
-        price: price.toString(), 
-        foreignShipping: foreignShipping.toString() 
-    });
-
-    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
-    alert("快递草稿已缓存 ✅");
-    clearForm();
-}
 
 function previewOrderCache() {
     const list = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
@@ -503,7 +484,9 @@ function deleteExpressCache(index) {
     }
 }
 
-// ✅ 修正版 - 提交并删除快递草稿
+
+
+
 // ✅ 修正版 - 提交并删除快递草稿
 function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
@@ -571,7 +554,6 @@ function submitSelectedExpresses() {
         closeExpressModal();
     });
 }
-
 
 function submitSelectedOrders() {
     const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
@@ -768,9 +750,6 @@ function downloadCachedExpress() {
         });
 }
 
-
-
-
 // 🔒 关闭弹窗
 function closeOrderModal() {
     document.getElementById("orderCacheModal").style.display = "none";
@@ -780,6 +759,7 @@ function closeExpressModal() {
     document.getElementById("expressCacheModal").style.display = "none";
 }
 </script>
+
 
 </body>
 </html>
