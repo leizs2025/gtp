@@ -517,19 +517,9 @@ function deleteExpressCache(index) {
     }
 }
 
-// ✅ 删除快递缓存
-function deleteExpressCache(index) {
-    const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-    if (index >= 0 && index < cache.length) {
-        // **⚠️ 确保索引有效**
-        cache.splice(index, 1);
-        localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
-        alert("快递已删除 ✅");
-        previewExpressCache(); // **刷新列表**
-    }
-}
 
-// ✅ 修正版 - 提交并删除快递草稿
+
+
 // ✅ 修正版 - 提交并删除快递草稿
 function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
@@ -597,7 +587,6 @@ function submitSelectedExpresses() {
         closeExpressModal();
     });
 }
-
 
 function submitSelectedOrders() {
     const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
