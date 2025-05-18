@@ -313,29 +313,7 @@ function bindSummaryEvents() {
 document.addEventListener("DOMContentLoaded", bindSummaryEvents);
 
 
-// 💾 缓存快递草稿 (修正版)
-function cacheExpress() { 
-    const orderNumber = String(getField("orderNumber")).trim();
-    const trackingNumber = String(getField("trackingNumber")).trim();
-    const customer = getField("customer");
-    const company = getField("company");
-    const product = getField("product");
-    const quantity = parseOrZero(getField("quantity"));
-    const price = parseOrZero(getField("price"));
-    const foreignShipping = parseOrZero(getField("foreignShipping"));
 
-    // ✅ 确保 cache 是一个数组
-    let cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
-
-    // **⚠️ 确保转换成功**
-    if (!Array.isArray(cache)) cache = [];
-
-    // ✅ 允许空快递单号
-    cache.push({ trackingNumber, customer, company, product, quantity, price, foreignShipping });
-    localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
-    alert("快递草稿已缓存 ✅");
-    clearForm();
-}
 
 // 计算小计和总计函数
 function calculateTotal(quantity, price, fee, customer) {
@@ -517,9 +495,7 @@ function deleteExpressCache(index) {
     }
 }
 
-
-
-
+// ✅ 修正版 - 提交并删除快递草稿
 // ✅ 修正版 - 提交并删除快递草稿
 function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
@@ -587,6 +563,7 @@ function submitSelectedExpresses() {
         closeExpressModal();
     });
 }
+
 
 function submitSelectedOrders() {
     const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
@@ -782,6 +759,9 @@ function downloadCachedExpress() {
             alert("快递草稿同步失败");
         });
 }
+
+
+
 
 // 🔒 关闭弹窗
 function closeOrderModal() {
