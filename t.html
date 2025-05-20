@@ -195,6 +195,9 @@ function deleteRow(button, rowIndex, customerName) {
 function submitAllChanges() {
     const customerName = document.getElementById("data-modal-title").textContent.trim();
     const rows = Array.from(document.querySelectorAll("#data-table tr")).slice(1);
+    let changesCount = 0;
+    let successCount = 0;
+    let errorCount = 0;
 
     rows.forEach(row => {
         const cells = Array.from(row.querySelectorAll("td input"));
@@ -216,6 +219,7 @@ function submitAllChanges() {
 
         // ✅ 只提交有修改的数据
         if (isModified) {
+            changesCount++;
             fetch(ORDER_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -225,10 +229,49 @@ function submitAllChanges() {
                 })
             })
             .then(res => res.json())
-            .then(response => console.log("单笔提交结果：", response))
-            .catch(err => console.error("提交失败：", err));
+            .then(response => {
+                console.log("单笔提交结果：", response);
+                
+                if (response.success) {
+                    successCount++;
+                    // ✅ 成功后清空输入框
+                    cells.forEach(input => input.dataset.original = input.value.trim());
+                } else {
+                    errorCount++;
+                }
+
+                // ✅ 检查是否所有请求都处理完
+                if (--changesCount === 0) {
+                    if (errorCount > 0) {
+                        alert(`⚠️ 提交完成，但有 ${errorCount} 条记录提交失败`);
+                    } else {
+                        alert("✅ 数据提交成功");
+                        closeDataModal();
+                    }
+                }
+            })
+            .catch(err => {
+                errorCount++;
+                console.error("提交失败：", err);
+                if (--changesCount === 0) {
+                    alert(`⚠️ 提交完成，但有 ${errorCount} 条记录提交失败`);
+                }
+            });
         }
     });
+
+    // ✅ 如果没有修改的数据，直接关闭弹窗
+    if (changesCount === 0) {
+        alert("⚠️ 没有任何修改，无法提交");
+        closeDataModal();
+    }
+}
+
+// ✅ 弹窗关闭函数
+function closeDataModal() {
+    const modal = document.getElementById("data-modal");
+    modal.style.display = "none";
+    document.getElementById("data-table").innerHTML = "";
 }
 
     </script>
