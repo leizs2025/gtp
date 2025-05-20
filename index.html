@@ -487,15 +487,15 @@ function deleteExpressCache(index) {
 
 
 
-// ✅ 修正版 - 提交并删除快递草稿
-function submitSelectedExpresses() {
-    const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")].map(el => parseInt(el.value));
+async function submitSelectedExpresses() {
+    const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")]
+        .map(el => parseInt(el.value));
     let list = JSON.parse(localStorage.getItem("expressCache") || "[]");
     let successOrderNumbers = [];
 
-    // 🚀 并行提交 (确保累积)
-    const submissionPromises = selected.map(i => {
+    for (let i of selected) {
         const item = list[i];
+
         const { total } = calculateTotal(
             parseOrZero(item.quantity),
             parseOrZero(item.price),
@@ -503,124 +503,149 @@ function submitSelectedExpresses() {
             item.customer
         );
 
-        return fetch(EXPRESS_URL, {
+        // ✅ 构造扁平 payload（GAS3 Worker 会使用 columns 进行映射）
+        const payload = {
+            customer: item.customer || "",
+            orderNumber: item.orderNumber || "",
+            trackingNumber: item.trackingNumber || "",
+            company: item.company || "",
+            product: item.product || "",
+            total: emptyIfZero(total)
+        };
+
+        try {
+            const res = await fetch(EXPRESS_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            console.log("📦 提交返回:", result);
+
+            if (result.success || result.message?.includes("成功")) {
+                successOrderNumbers.push(item.orderNumber);
+            }
+
+        } catch (err) {
+            console.error("🛑 快递提交失败:", err);
+        }
+    }
+
+    // ✅ 更新缓存
+    list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
+    localStorage.setItem("expressCache", JSON.stringify(list));
+
+    // ✅ 删除草稿
+    if (successOrderNumbers.length > 0) {
+        console.log("📝 正在删除快递草稿:", successOrderNumbers);
+        fetch(EXPRESS_WORKER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...item, total })
+            body: JSON.stringify({
+                action: "delete",
+                type: "express",
+                orderNumbers: successOrderNumbers
+            })
         })
         .then(res => res.json())
         .then(r => {
-            if (r.message?.includes("成功")) {
-                successOrderNumbers.push(String(item.orderNumber).trim());
-            }
-            return r;
+            console.log("✅ 草稿删除返回:", r);
+            alert(`✅ 成功提交并删除 ${successOrderNumbers.length} 条快递 ✅`);
         })
         .catch(err => {
-            console.error("🛑 快递提交失败:", err);
-            alert("快递提交失败");
+            console.error("🛑 草稿删除失败:", err);
+            alert("草稿删除失败");
         });
-    });
+    } else {
+        alert("⚠️ 没有成功提交的快递草稿");
+    }
 
-    // ✅ 处理所有提交完成后的逻辑
-    Promise.allSettled(submissionPromises).then(results => {
-        // 只保留提交成功的快递
-        list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
-        localStorage.setItem("expressCache", JSON.stringify(list));
-
-        if (successOrderNumbers.length > 0) {
-            console.log("📝 正在删除草稿:", successOrderNumbers);
-            fetch(EXPRESS_WORKER_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "delete",
-                    type: "express",
-                    orderNumbers: successOrderNumbers
-                })
-            })
-            .then(res => res.json())
-            .then(r => {
-                console.log("✅ GAS 草稿删除返回:", r);
-                alert(`成功提交并删除 ${successOrderNumbers.length} 条快递 ✅`);
-            })
-            .catch(err => {
-                console.error("🛑 GAS 草稿删除失败:", err);
-                alert("GAS 草稿删除失败");
-            });
-        } else {
-            alert("没有成功提交的快递草稿");
-        }
-
-        closeExpressModal();
-    });
+    closeExpressModal();
 }
 
-function submitSelectedOrders() {
-    const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")].map(el => parseInt(el.value));
+
+
+async function submitSelectedOrders() {
+    const selected = [...document.querySelectorAll("input[name='orderIndex']:checked")]
+        .map(el => parseInt(el.value));
     let list = JSON.parse(localStorage.getItem("orderCache") || "[]");
     let successOrderNumbers = [];
 
-    // 🚀 并行提交 (确保累积)
-    const submissionPromises = selected.map(i => {
+    for (let i of selected) {
         const item = list[i];
+
         const { subtotal, total } = calculateTotal(
             parseOrZero(item.quantity),
             parseOrZero(item.price),
             parseOrZero(item.foreignShipping),
             item.customer
         );
-        return fetch(ORDER_URL, {
+
+        // ✅ 构造扁平结构（GAS4 会根据 customer 映射 columns 自动排）
+       const payload = {
+ 	 customer: item.customer || "",
+  	trackingNumber: item.trackingNumber || "",
+  	orderNumber: item.orderNumber || "",
+  	product: item.product || "",
+  	quantity: emptyIfZero(item.quantity),
+  	price: emptyIfZero(item.price),
+  	foreignShipping: emptyIfZero(item.foreignShipping),
+  	subtotal: emptyIfZero(subtotal),
+ 	 total: emptyIfZero(total)
+};
+
+
+        try {
+            const res = await fetch(ORDER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            console.log("📤 订单提交返回:", result);
+
+            if (result.success || result.message?.includes("成功")) {
+                successOrderNumbers.push(item.orderNumber);
+            }
+
+        } catch (err) {
+            console.error("🛑 订单提交失败:", err);
+        }
+    }
+
+    // ✅ 清理本地缓存
+    list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
+    localStorage.setItem("orderCache", JSON.stringify(list));
+
+    // ✅ 原始草稿删除逻辑保留
+    if (successOrderNumbers.length > 0) {
+        console.log("📝 正在删除订单草稿:", successOrderNumbers);
+        fetch(ORDER_WORKER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...item, subtotal, total })
+            body: JSON.stringify({
+                action: "delete",
+                type: "order",
+                orderNumbers: successOrderNumbers
+            })
         })
         .then(res => res.json())
         .then(r => {
-            if (r.success === true || r.message?.includes("成功")) {
-                successOrderNumbers.push(String(item.orderNumber).trim());
-            }
-            return r;
+            console.log("✅ 订单草稿删除返回:", r);
+            alert(`✅ 成功提交并删除 ${successOrderNumbers.length} 条订单 ✅`);
         })
         .catch(err => {
-            console.error("🛑 订单提交失败:", err);
-            alert("订单提交失败");
+            console.error("🛑 草稿删除失败:", err);
+            alert("订单草稿删除失败");
         });
-    });
+    } else {
+        alert("⚠️ 没有成功提交的订单草稿");
+    }
 
-    // ✅ 处理所有提交完成后的逻辑
-    Promise.allSettled(submissionPromises).then(results => {
-        // 只保留提交成功的订单
-        list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
-        localStorage.setItem("orderCache", JSON.stringify(list));
-
-        if (successOrderNumbers.length > 0) {
-            console.log("📝 正在删除草稿:", successOrderNumbers);
-            fetch(ORDER_WORKER_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "delete",
-                    type: "order",
-                    orderNumbers: successOrderNumbers
-                })
-            })
-            .then(res => res.json())
-            .then(r => {
-                console.log("✅ GAS 草稿删除返回:", r);
-                alert(`成功提交并删除 ${successOrderNumbers.length} 条订单 ✅`);
-            })
-            .catch(err => {
-                console.error("🛑 GAS 草稿删除失败:", err);
-                alert("GAS 草稿删除失败");
-            });
-        } else {
-            alert("没有成功提交的订单草稿");
-        }
-
-        closeOrderModal();
-    });
+    closeOrderModal();
 }
-
 
 // ⬆️ 上传快递草稿 (允许空值)
 function uploadCachedExpress() {
