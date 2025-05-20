@@ -148,25 +148,68 @@
     showStatus("✅ 查询成功", "success");
   }
   
-  function addToCache() {
+ function loadPendingSubmissions() {
+    const cachedData = localStorage.getItem("pendingSubmissions");
+    if (cachedData) {
+        try {
+            pendingSubmissions = JSON.parse(cachedData);
+            renderPreview();
+            showStatus(`✅ 恢复 ${pendingSubmissions.length} 条缓存记录`, "success");
+        } catch (e) {
+            console.error("⚠️ 缓存恢复失败:", e);
+            showStatus("⚠️ 缓存恢复失败", "error");
+            localStorage.removeItem("pendingSubmissions");
+        }
+    }
+}
+
+function savePendingSubmissions() {
+    try {
+        localStorage.setItem("pendingSubmissions", JSON.stringify(pendingSubmissions));
+        console.log("✅ 缓存已保存");
+    } catch (e) {
+        console.error("⚠️ 缓存保存失败:", e);
+    }
+}
+
+function addToCache() {
     const price = document.getElementById("enteredPrice").value.trim();
     const number = matchedTrackingNumber || document.getElementById("trackingNumber").value.trim();
-    if (!price || !lastFetched.company || !number) return showStatus("请查询并填写金额", "error");
-  
+
+    // ✅ 确保已查询到客户信息
+    if (!number || !price || !lastFetched.company) {
+        showStatus("⚠️ 请先查询快递单号，并填写运费金额", "error");
+        return;
+    }
+
+    // ✅ 防止重复添加
     const alreadyExists = pendingSubmissions.some(item => item.trackingNumber === number);
-    if (alreadyExists) return showStatus("该快递单号已存在于缓存中", "error");
-  
+    if (alreadyExists) {
+        showStatus("⚠️ 该快递单号已存在于缓存中", "error");
+        return;
+    }
+
+    // ✅ 添加到缓存
     pendingSubmissions.push({
-      trackingNumber: number,
-      company: lastFetched.company,
-      customer: lastFetched.customer,
-      product: lastFetched.product,
-      enteredPrice: price
+        trackingNumber: number,
+        company: lastFetched.company,
+        customer: lastFetched.customer,
+        product: lastFetched.product,
+        enteredPrice: price
     });
+
+    // ✅ 保存到 localStorage
+    savePendingSubmissions();
+
+    // ✅ 清空表单
     clearForm();
     renderPreview();
-    showStatus("✅ 已加入缓存", "success");
-  }
+    showStatus("✅ 已成功加入缓存", "success");
+}
+
+// ✅ 页面加载时恢复缓存
+window.onload = loadPendingSubmissions;
+
   
   function renderPreview() {
     const box = document.getElementById("previewList");
@@ -225,28 +268,38 @@
     lastFetched = {};
   }
   
-  function submitAll() {
-    if (pendingSubmissions.length === 0) return showStatus("缓存为空", "error");
+ function submitAll() {
+    if (pendingSubmissions.length === 0) {
+        showStatus("⚠️ 缓存为空", "error");
+        return;
+    }
+
     fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "submitBatch", list: pendingSubmissions })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "submitBatch", list: pendingSubmissions })
     })
     .then(r => r.json())
     .then(res => {
-      if (res.message) {
-        showStatus(res.message, "success");
-        pendingSubmissions = [];
-        renderPreview();
-        clearForm();
-        document.getElementById("ticketSelector").value = "";
-        renderTicket();
-      } else {
-        showStatus("提交失败", "error");
-      }
+        if (res.message) {
+            // ✅ 提交成功后清除缓存
+            pendingSubmissions = [];
+            localStorage.removeItem("pendingSubmissions");
+            
+            // ✅ 刷新显示
+            renderPreview();
+            clearForm();
+            document.getElementById("ticketSelector").value = "";
+            renderTicket();
+
+            showStatus(res.message, "success");
+        } else {
+            showStatus("提交失败", "error");
+        }
     })
     .catch(() => showStatus("提交异常", "error"));
-  }
+}
+
   
   function renderTicket() {
     const name = document.getElementById("ticketSelector").value;
