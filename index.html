@@ -335,7 +335,7 @@ function cacheExpress() {
     cache.push({ trackingNumber, customer, company, product, quantity, price, foreignShipping });
     localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
     alert("快递草稿已缓存 ✅");
-    clearForm();
+    
 }
 
 // 计算小计和总计函数
