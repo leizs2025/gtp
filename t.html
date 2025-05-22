@@ -1,271 +1,227 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>客户管理系统</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-      <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
-        h1 { color: #333; }
-        .card { background-color: #fff; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; }
-        .btn { background-color: #007bff; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
-        .btn:hover { background-color: #0056b3; }
-        .btn.view { background-color: #17a2b8; margin-top: 10px; }
-        .btn.edit { background-color: #6c757d; margin-top: 10px; }
-        .btn.delete { background-color: #dc3545; margin-top: 10px; }
-        .btn.new, .submit-btn { background-color: #28a745; margin-bottom: 20px; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
-        .btn.new:hover, .submit-btn:hover { background-color: #218838; }
-        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); padding-top: 60px; }
-.modal-content {
-    overflow-x: auto;
-    white-space: nowrap;
-    background-color: #fefefe;
-    margin: 5% auto;
-    padding: 30px;
-    border: 1px solid #888;
-    width: 95%;
-    max-width: 800px;
-    border-radius: 20px;
-    position: relative;
-}        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close:hover, .close:focus { color: #000; text-decoration: none; cursor: pointer; }
-        input { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .input-cell { padding: 8px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 5px; min-width: 100px; box-sizing: border-box; }
-        .input-cell.product { min-width: 300px; flex-grow: 1; }
-        .delete-btn { background-color: #dc3545; color: #fff; padding: 0; border: none; border-radius: 50%; cursor: pointer; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin: 0 auto; }
-        .delete-btn:hover { background-color: #c82333; }
-    </style>
-    
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客户管理系统</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+    h1 { color: #333; }
+    .card { background-color: #fff; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; }
+    .btn { background-color: #007bff; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
+    .btn:hover { background-color: #0056b3; }
+    .btn.view { background-color: #17a2b8; margin-top: 10px; }
+    .btn.new, .submit-btn { background-color: #28a745; margin-bottom: 20px; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
+    .btn.new:hover, .submit-btn:hover { background-color: #218838; }
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); padding-top: 60px; }
+    .modal-content { overflow-x: auto; white-space: nowrap; background-color: #fefefe; margin: 5% auto; padding: 30px; border: 1px solid #888; width: 95%; max-width: 800px; border-radius: 20px; position: relative; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    .close:hover, .close:focus { color: #000; text-decoration: none; cursor: pointer; }
+    input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .input-cell { padding: 8px; border: 1px solid #ddd; border-radius: 5px; min-width: 100px; box-sizing: border-box; }
+    .delete-btn { background-color: #dc3545; color: #fff; padding: 0; border: none; border-radius: 50%; cursor: pointer; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin: 0 auto; }
+    .delete-btn:hover { background-color: #c82333; }
+  </style>
 </head>
 <body>
-    <h1>客户管理系统</h1>
-    
-    <div id="customer-list"></div>
-
-    <!-- 数据查看模态框 -->
-    <div id="data-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeDataModal()">&times;</span>
-            <h2 id="data-modal-title">客户数据</h2>
-            <table id="data-table"></table>
-            <button class="btn new" onclick="addNewRow()">新增数据行</button>
-            <button class="submit-btn" onclick="submitAllChanges()">提交所有修改</button>
-        </div>
+  <h1>客户管理系统</h1>
+  <div id="customer-list"></div>
+  <div id="data-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeDataModal()">&times;</span>
+      <h2 id="data-modal-title">客户数据</h2>
+      <table id="data-table"></table>
+      <div id="total-summary" style="margin-top: 15px; font-weight: bold; font-size: 16px;"></div>
+      <button class="btn new" onclick="addNewRow()">新增数据行</button>
+      <button class="submit-btn" onclick="submitAllChanges()">提交所有修改</button>
     </div>
+  </div>
 
-    <script>
-        const ORDER_URL = "https://yjtee1.jeenty.workers.dev/gas5";
-    
-        // ✅ 客户列映射
-        const customerMap = {
-            "咪雪": ["trackingNumber", "product", "quantity", "price", "foreignShipping", "subtotal", "total"],
-            "HKS": ["product", "price", "quantity", "foreignShipping", "subtotal", "total"],
-            "Annie": ["trackingNumber", "product", "quantity", "price", "foreignShipping", "subtotal", "total", "orderNumber"],
-            "JFL": ["product", "quantity", "price", "foreignShipping", "subtotal", "total"]
-        };
-    
-        // ✅ 自定义表头
-        const customHeaders = {
-            "trackingNumber": "追踪号码",
-            "product": "产品名称",
-            "quantity": "数量", 
-            "price": "价格", 
-            "foreignShipping": "运费", 
-            "subtotal": "小计", 
-            "total": "总计",
-            "orderNumber": "订单号"
-        };
-    
-        function getColumnWidth(header) {
-            if (header === "trackingNumber" || header === "orderNumber") return "180px";
-            if (["quantity", "price", "foreignShipping", "subtotal", "total"].includes(header)) return "40px";
-            if (header === "product") return "400px";
-            return "150px";
-        }
-    
-        function formatDate(value) {
-            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) {
-                const date = new Date(value);
-                return date.toISOString().split("T")[0];
-            }
-            return value;
-        }
-    
-        function renderCustomers() {
-            const list = document.getElementById("customer-list");
-            list.innerHTML = "";
-            Object.keys(customerMap).forEach(name => {
-                list.innerHTML += `
-                    <div class="card">
-                        <h3>${name}</h3>
-                        <button class="btn view" onclick="loadCustomerData('${name}')">查看数据</button>
-                    </div>
-                `;
-            });
-        }
-    
-        function loadCustomerData(customerName) {
-            const table = document.getElementById("data-table");
-            const headers = customerMap[customerName];
-            table.innerHTML = "";
-    
-            fetch(`${ORDER_URL}?customer=${customerName}`)
-                .then(res => res.json())
-                .then(response => {
-                    const data = response.data || [];
-    
-                    // ✅ 生成表头，过滤空列
-                    table.innerHTML += `
-                        <tr>
-                            ${headers.filter(h => h !== "").map(header => `
-                                <th style="width: ${getColumnWidth(header)};">
-                                    ${customHeaders[header] || header}
-                                </th>`).join("")}
-                            <th style="width: 50px;">操作</th>
-                        </tr>
-                    `;
-    
-                    // ✅ 生成数据行
-                    data.forEach(row => {
-                        table.innerHTML += `
-                            <tr>
-                                ${headers.filter(h => h !== "").map(header => `
-                                    <td>
-                                        <input type="text" class="input-cell" value="${formatDate(row[header] || "")}" data-original="${formatDate(row[header] || "")}">
-                                    </td>
-                                `).join("")}
-                                <td>
-                                    <button class="delete-btn" onclick="deleteRow(this, ${row._rowIndex}, '${customerName}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    });
-    
-                    // ✅ 打开数据模态框
-                    document.getElementById("data-modal").style.display = "block";
-                    document.getElementById("data-modal-title").textContent = customerName;
-                })
-                .catch(err => alert("无法加载客户数据: " + err));
-        }
-    
-        function closeDataModal() {
-            document.getElementById("data-modal").style.display = "none";
-        }
-    
-        renderCustomers();
-
-        renderCustomers();
-            function addNewRow() {
-            const table = document.getElementById("data-table");
-            const headers = Array.from(table.querySelectorAll("th")).map(th => th.textContent.trim());
-            const newRow = headers.slice(0, -1).map(() => "<td><input type='text' class='input-cell'></td>").join("");
-            table.innerHTML += `<tr>${newRow}<td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-trash"></i></button></td></tr>`;
-        }
-
- // ✅ 初始化删除记录
-const deletedRows = [];
-
-// ✅ 处理删除
-function deleteRow(button, rowIndex, customerName) {
-    // ✅ 直接发送单笔删除请求
-    fetch(ORDER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            customer: customerName,
-            rowIndex: rowIndex,
-            action: "delete"
-        })
-    })
-    .then(res => res.json())
-    .then(response => {
-        console.log("删除结果：", response);
-        // ✅ 删除 DOM 中的行
-        button.parentElement.parentElement.remove();
-    })
-    .catch(err => console.error("删除失败：", err));
+<script>
+const ORDER_URL = "https://yjtee1.jeenty.workers.dev/gas5";
+const customerMap = {
+  "咪雪": ["trackingNumber", "product", "quantity", "price", "foreignShipping", "subtotal", "total"],
+  "HKS": ["product", "price", "quantity", "foreignShipping", "subtotal", "total"],
+  "Annie": ["trackingNumber", "product", "quantity", "price", "foreignShipping", "subtotal", "total", "orderNumber"],
+  "JFL": ["product", "quantity", "price", "foreignShipping", "subtotal", "total"]
+};
+const customHeaders = {
+  "trackingNumber": "追踪号码",
+  "product": "产品名称",
+  "quantity": "数量",
+  "price": "价格",
+  "foreignShipping": "运费",
+  "subtotal": "小计",
+  "total": "总计",
+  "orderNumber": "订单号"
+};
+function closeDataModal() {
+  document.getElementById("data-modal").style.display = "none";
+  document.getElementById("data-table").innerHTML = "";
+  document.getElementById("total-summary").textContent = "";
 }
-
+function formatDisplay(value) {
+  if (typeof value === "string" && value.endsWith("Z")) {
+    const date = new Date(value);
+    if (!isNaN(date)) {
+      return date.toLocaleDateString("zh-CN", { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+  }
+  return value;
+}
+function renderCustomers() {
+  const list = document.getElementById("customer-list");
+  list.innerHTML = Object.keys(customerMap).map(name => `
+    <div class="card">
+      <h3>${name}</h3>
+      <button class="btn view" onclick="loadCustomerData('${name}')">查看数据</button>
+    </div>`).join("");
+}
+function loadCustomerData(customerName) {
+  const table = document.getElementById("data-table");
+  const headers = customerMap[customerName];
+  table.innerHTML = `<tr>
+    <th><input type="checkbox" onclick="toggleAllCheckboxes(this)"></th>
+    ${headers.map(h => `<th>${customHeaders[h]}</th>`).join("")}
+    <th>操作</th>
+  </tr>`;
+  fetch(`${ORDER_URL}?customer=${customerName}`)
+    .then(res => res.json())
+    .then(({ data }) => {
+      data.forEach((row, rowIndex) => {
+        const cells = headers.map(h => `<td><input type="text" class="input-cell" value="${formatDisplay(row[h] || '')}" data-original="${row[h] || ''}"></td>`).join("");
+        const checkbox = `<td><input type="checkbox" class="row-check" onchange="recalculateTotal()"></td>`;
+        const delBtn = `<td><button class="delete-btn" onclick="deleteRow(this, ${row._rowIndex ?? rowIndex}, '${customerName}')"><i class="fas fa-trash"></i></button></td>`;
+        table.innerHTML += `<tr data-row-index="${row._rowIndex ?? rowIndex}">${checkbox}${cells}${delBtn}</tr>`;
+      });
+      document.getElementById("data-modal-title").textContent = customerName;
+      document.getElementById("data-modal").style.display = "block";
+    });
+}
+function toggleAllCheckboxes(master) {
+  document.querySelectorAll(".row-check").forEach(cb => { cb.checked = master.checked });
+  recalculateTotal();
+}
+function recalculateTotal() {
+  const customer = document.getElementById("data-modal-title").textContent;
+  const rows = document.querySelectorAll("#data-table tr");
+  let total = 0;
+  rows.forEach((row, idx) => {
+    if (idx === 0) return;
+    const cb = row.querySelector(".row-check");
+    if (!cb || !cb.checked) return;
+    const inputs = row.querySelectorAll(".input-cell");
+    const index = customerMap[customer].indexOf("total");
+    if (inputs[index]) {
+      const val = parseFloat(inputs[index].value || 0);
+      if (!isNaN(val)) total += val;
+    }
+  });
+  document.getElementById("total-summary").textContent = `💰 已选总金额合计：${total.toFixed(2)}`;
+}
+function addNewRow() {
+  const table = document.getElementById("data-table");
+  const customer = document.getElementById("data-modal-title").textContent;
+  const headers = customerMap[customer];
+  const checkbox = `<td><input type="checkbox" class="row-check" onchange="recalculateTotal()"></td>`;
+  const cells = headers.map(() => `<td><input type='text' class='input-cell'></td>`).join("");
+  const delBtn = `<td><button class="delete-btn" onclick="this.closest('tr').remove(); recalculateTotal();"><i class="fas fa-trash"></i></button></td>`;
+  table.innerHTML += `<tr>${checkbox}${cells}${delBtn}</tr>`;
+}
+function deleteRow(button, rowIndex, customerName) {
+  fetch(ORDER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      customer: customerName,
+      rowIndex: rowIndex,
+      action: "delete"
+    })
+  })
+  .then(res => res.json())
+  .then(response => {
+    console.log("删除返回:", response);
+    button.closest("tr").remove();
+    recalculateTotal();
+  })
+  .catch(err => console.error("删除失败:", err));
+}
 function submitAllChanges() {
-    const customerName = document.getElementById("data-modal-title").textContent.trim();
-    const rows = Array.from(document.querySelectorAll("#data-table tr")).slice(1);
-    let changesCount = 0;
-    let successCount = 0;
-    let errorCount = 0;
+  const customerName = document.getElementById("data-modal-title").textContent.trim();
+  const rows = Array.from(document.querySelectorAll("#data-table tr")).slice(1);
+  let changesCount = 0;
+  let successCount = 0;
+  let errorCount = 0;
+  rows.forEach(row => {
+    const inputs = Array.from(row.querySelectorAll("input.input-cell"));
+    const rowData = {};
+    let isModified = false;
 
-    rows.forEach(row => {
-        const cells = Array.from(row.querySelectorAll("td input"));
-        const rowData = {};
-        let isModified = false;
+    customerMap[customerName].forEach((col, index) => {
+      const input = inputs[index];
+      const value = input.value.trim();
+      const original = input.dataset.original ?? null;
 
-        customerMap[customerName].forEach((col, index) => {
-            const input = cells[index];
-            const value = input.value.trim();
-            const original = input.dataset.original || "";
-
-            // ✅ 只有在修改时才提交
-            if (value !== original) {
-                isModified = true;
-            }
-
-            rowData[col] = value;
-        });
-
-        // ✅ 只提交有修改的数据
-        if (isModified) {
-            changesCount++;
-            fetch(ORDER_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    customer: customerName,
-                    values: rowData
-                })
-            })
-            .then(res => res.json())
-            .then(response => {
-                console.log("单笔提交结果：", response);
-                
-                if (response.success) {
-                    successCount++;
-                    // ✅ 成功后清空输入框
-                    cells.forEach(input => input.dataset.original = input.value.trim());
-                } else {
-                    errorCount++;
-                }
-
-                // ✅ 检查是否所有请求都处理完
-                if (--changesCount === 0) {
-                    if (errorCount > 0) {
-                        alert(`⚠️ 提交完成，但有 ${errorCount} 条记录提交失败`);
-                    } else {
-                        alert("✅ 数据提交成功");
-                        closeDataModal();
-                    }
-                }
-            })
-            .catch(err => {
-                errorCount++;
-                console.error("提交失败：", err);
-                if (--changesCount === 0) {
-                    alert(`⚠️ 提交完成，但有 ${errorCount} 条记录提交失败`);
-                }
-            });
-        }
+      if (original === null || value !== original) {
+        isModified = true;
+      }
+      rowData[col] = value;
     });
 
-    // ✅ 如果没有修改的数据，直接关闭弹窗
-    if (changesCount === 0) {
-        alert("⚠️ 没有任何修改，无法提交");
-        closeDataModal();
+    if (isModified) {
+      const rowIndexAttr = row.getAttribute("data-row-index");
+      const rowIndex = rowIndexAttr ? Number(rowIndexAttr) : undefined;
+
+      const payload = {
+        customer: customerName,
+        values: rowData
+      };
+      if (rowIndex !== undefined && !isNaN(rowIndex)) {
+        payload.rowIndex = rowIndex;
+      }
+
+      changesCount++;
+      fetch(ORDER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(response => {
+        if (response.success) {
+          successCount++;
+          inputs.forEach(input => input.dataset.original = input.value.trim());
+        } else {
+          errorCount++;
+        }
+        if (--changesCount === 0) {
+          if (errorCount > 0) {
+            alert(`⚠️ 提交完成，但有 ${errorCount} 条记录提交失败`);
+          } else {
+            alert("✅ 数据提交成功");
+            closeDataModal();
+          }
+        }
+      })
+      .catch(err => {
+        errorCount++;
+        console.error("提交失败：", err);
+        if (--changesCount === 0) {
+          alert(`⚠️ 提交完成，但有 ${errorCount} 条记录提交失败`);
+        }
+      });
     }
+  });
+  if (changesCount === 0) {
+    alert("⚠️ 没有任何修改，无法提交");
+    closeDataModal();
+  }
 }
+renderCustomers();
 
 // ✅ 弹窗关闭函数
 function closeDataModal() {
@@ -274,6 +230,7 @@ function closeDataModal() {
     document.getElementById("data-table").innerHTML = "";
 }
 
-    </script>
+
+  </script>
 </body>
 </html>
