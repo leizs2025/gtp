@@ -244,6 +244,7 @@ window.onload = loadPendingSubmissions;
   
   function removeItem(i) {
     pendingSubmissions.splice(i, 1);
+    savePendingSubmissions();   // ← 同步 localStorage
     renderPreview();
   }
   
@@ -371,6 +372,10 @@ window.onload = loadPendingSubmissions;
 <script>
   const codeReader = new ZXing.BrowserMultiFormatReader();
   const videoElement = document.getElementById("scannerPreview");
+  videoElement.addEventListener("click", () => {
+  codeReader.reset();
+  videoElement.style.display = "none";
+});
 
   window.startScan = function () {
     videoElement.style.display = "block";
