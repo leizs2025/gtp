@@ -103,13 +103,14 @@
     </div>
   </div>
 
-  <script>
+ <script>
     class TabManager {
       constructor() {
         this.tabs = document.querySelectorAll('.tab');
         this.iframes = document.querySelectorAll('.system-iframe');
         this.loader = document.querySelector('.loader');
         this.activeIndex = 0;
+        this.loaded = new Set();  // 🆕 用于标记已加载 iframe
         this.init();
       }
 
@@ -138,13 +139,15 @@
 
       async loadIframe(index) {
         const iframe = this.iframes[index];
-        if (!iframe.src) {
-          iframe.src = iframe.dataset.src;
-          await new Promise(resolve => {
-            iframe.onload = resolve;
-            setTimeout(resolve, 3000); // 超时保障
-          });
-        }
+        const url = iframe.dataset.src;
+
+        // ✅ 关键改动：每次都重新设置 src，避免加载失败
+        iframe.src = url;
+
+        await new Promise(resolve => {
+          iframe.onload = resolve;
+          setTimeout(resolve, 3000); // 加载超时保障
+        });
       }
 
       showLoader() {
@@ -161,15 +164,10 @@
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         document.querySelectorAll('.system-iframe:not(.active)').forEach(iframe => {
-          iframe.src = '';
+          iframe.src = ''; // 节省内存
         });
       }
     });
-     function setAppHeight() {
-    document.querySelector('.app-layout').style.height = window.innerHeight + 'px';
-  }
-  window.addEventListener('resize', setAppHeight);
-  window.addEventListener('load', setAppHeight);
   </script>
 </body>
 </html>
