@@ -168,6 +168,11 @@
         });
       }
     });
+     function setAppHeight() {
+    document.querySelector('.app-layout').style.height = window.innerHeight + 'px';
+  }
+  window.addEventListener('resize', setAppHeight);
+  window.addEventListener('load', setAppHeight);
   </script>
 </body>
 </html>
