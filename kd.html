@@ -494,6 +494,14 @@ function deleteExpressCache(index) {
         previewExpressCache(); // **刷新列表**
     }
 }
+  
+function emptyIfZero(value) {
+    return (value === 0 || value === "0") ? "" : value;
+}
+
+async function submitSelectedExpresses() {
+    ...
+}
 
 async function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")]
