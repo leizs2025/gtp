@@ -500,10 +500,6 @@ function emptyIfZero(value) {
 }
 
 async function submitSelectedExpresses() {
-    ...
-}
-
-async function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")]
         .map(el => parseInt(el.value));
     let list = JSON.parse(localStorage.getItem("expressCache") || "[]");
