@@ -485,7 +485,9 @@ function deleteExpressCache(index) {
 }
 
 
-
+function emptyIfZero(value) {
+    return (value === 0 || value === "0") ? "" : value;
+}
 
 async function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")]
