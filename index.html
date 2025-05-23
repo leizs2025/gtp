@@ -409,7 +409,7 @@ function previewOrderCache() {
     container.innerHTML = list.map((item, i) => `
         <li>
             <label>
-                <input type='checkbox' name='expressIndex' value='${i}'>
+                <input type='checkbox' name='orderIndex' value='${i}'>
                 商品: ${item.product || "未填写"} | 客户: ${item.customer || "未填写"} | 快递单号: ${item.trackingNumber || "未填写"}
             </label>
             <button type='button' onclick='editOrderCache(${i})'>✏️ 修改</button>
