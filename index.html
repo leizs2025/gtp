@@ -332,7 +332,7 @@ function cacheExpress() {
     if (!Array.isArray(cache)) cache = [];
 
     // ✅ 允许空快递单号
-    cache.push({ trackingNumber, customer, company, product, quantity, price, foreignShipping });
+    cache.push({ orderNumber, trackingNumber, customer, company, product, quantity, price, foreignShipping });
     localStorage.setItem(EXPRESS_CACHE_KEY, JSON.stringify(cache));
     alert("快递草稿已缓存 ✅");
     
