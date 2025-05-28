@@ -552,7 +552,7 @@ async function submitSelectedExpresses() {
         })
         .then(res => res.json())
         .then(r => {
-            console.log("✅ 草稿删除返回:", r);
+            //console.log("✅ 草稿删除返回:", r);
             alert(`✅ 成功提交并删除 ${successOrderNumbers.length} 条快递 ✅`);
         })
         .catch(err => {
@@ -688,7 +688,7 @@ function uploadCachedOrders() {
         return res.json();
     })
     .then(r => {
-         console.log("📝 上传返回结果:", r);
+        // console.log("📝 上传返回结果:", r);
         localStorage.removeItem(ORDER_CACHE_KEY);  // ✅ 清除订单缓存（必须放在 alert 前）
         alert(r.message || `已上传 ${cache.length} 条订单草稿 ✅`);
     })
