@@ -654,7 +654,6 @@ function uploadCachedExpress() {
     const cache = JSON.parse(localStorage.getItem(EXPRESS_CACHE_KEY) || "[]");
     if (!cache.length) return alert("没有快递草稿");
 
-    // ✅ 允许空值上传
     fetch(EXPRESS_WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -664,7 +663,10 @@ function uploadCachedExpress() {
         if (!res.ok) throw new Error("网络错误：" + res.status);
         return res.json();
     })
-    .then(r => alert(r.message || `已上传 ${cache.length} 条快递草稿 ✅`))
+    .then(r => {
+        alert(r.message || `已上传 ${cache.length} 条快递草稿 ✅`);
+        localStorage.removeItem(EXPRESS_CACHE_KEY);  // ✅ 清除快递缓存
+    })
     .catch(err => {
         console.error("🛑 快递草稿上传失败:", err);
         alert("快递草稿上传失败：" + err.message);
@@ -676,7 +678,6 @@ function uploadCachedOrders() {
     const cache = JSON.parse(localStorage.getItem(ORDER_CACHE_KEY) || "[]");
     if (!cache.length) return alert("没有订单草稿");
 
-    // ✅ 允许空值上传
     fetch(ORDER_WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -686,12 +687,16 @@ function uploadCachedOrders() {
         if (!res.ok) throw new Error("网络错误：" + res.status);
         return res.json();
     })
-    .then(r => alert(r.message || `已上传 ${cache.length} 条订单草稿 ✅`))
+    .then(r => {
+        alert(r.message || `已上传 ${cache.length} 条订单草稿 ✅`);
+        localStorage.removeItem(ORDER_CACHE_KEY);  // ✅ 清除订单缓存
+    })
     .catch(err => {
         console.error("🛑 订单草稿上传失败:", err);
         alert("订单草稿上传失败：" + err.message);
     });
 }
+
 
 // ✅ 订单去重 - 下载并融合草稿
 function downloadCachedOrders() {
