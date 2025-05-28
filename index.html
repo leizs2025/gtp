@@ -688,8 +688,9 @@ function uploadCachedOrders() {
         return res.json();
     })
     .then(r => {
+         console.log("📝 上传返回结果:", r);
+        localStorage.removeItem(ORDER_CACHE_KEY);  // ✅ 清除订单缓存（必须放在 alert 前）
         alert(r.message || `已上传 ${cache.length} 条订单草稿 ✅`);
-        localStorage.removeItem(ORDER_CACHE_KEY);  // ✅ 清除订单缓存
     })
     .catch(err => {
         console.error("🛑 订单草稿上传失败:", err);
