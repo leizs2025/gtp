@@ -527,8 +527,7 @@ async function submitSelectedExpresses() {
             item.customer
         );
 
-        // ✅ 构造扁平 payload（GAS3 Worker 会使用 columns 进行映射）
-        const payload = {
+        let payloadRaw = {
             customer: item.customer || "",
             orderNumber: item.orderNumber || "",
             trackingNumber: item.trackingNumber || "",
@@ -536,7 +535,9 @@ async function submitSelectedExpresses() {
             product: item.product || "",
             total: total
         };
-        const payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
+
+        let payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
+
         try {
             const res = await fetch(EXPRESS_URL, {
                 method: "POST",
@@ -556,11 +557,9 @@ async function submitSelectedExpresses() {
         }
     }
 
-    // ✅ 更新缓存
     list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
     localStorage.setItem("expressCache", JSON.stringify(list));
 
-    // ✅ 删除草稿
     if (successOrderNumbers.length > 0) {
         console.log("📝 正在删除快递草稿:", successOrderNumbers);
         fetch(EXPRESS_WORKER_URL, {
@@ -574,7 +573,6 @@ async function submitSelectedExpresses() {
         })
         .then(res => res.json())
         .then(r => {
-            console.log("✅ 草稿删除返回:", r);
             alert(`✅ 成功提交并删除 ${successOrderNumbers.length} 条快递 ✅`);
         })
         .catch(err => {
