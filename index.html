@@ -517,8 +517,7 @@ async function submitSelectedExpresses() {
             item.customer
         );
 
-        // ✅ 构造扁平 payload（GAS3 Worker 会使用 columns 进行映射）
-        const payload = {
+        let payloadRaw = {
             customer: item.customer || "",
             orderNumber: item.orderNumber || "",
             trackingNumber: item.trackingNumber || "",
@@ -526,7 +525,9 @@ async function submitSelectedExpresses() {
             product: item.product || "",
             total: total
         };
-        const payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
+
+        let payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
+
         try {
             const res = await fetch(EXPRESS_URL, {
                 method: "POST",
@@ -546,11 +547,9 @@ async function submitSelectedExpresses() {
         }
     }
 
-    // ✅ 更新缓存
     list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
     localStorage.setItem("expressCache", JSON.stringify(list));
 
-    // ✅ 删除草稿
     if (successOrderNumbers.length > 0) {
         console.log("📝 正在删除快递草稿:", successOrderNumbers);
         fetch(EXPRESS_WORKER_URL, {
@@ -564,7 +563,6 @@ async function submitSelectedExpresses() {
         })
         .then(res => res.json())
         .then(r => {
-            //console.log("✅ 草稿删除返回:", r);
             alert(`✅ 成功提交并删除 ${successOrderNumbers.length} 条快递 ✅`);
         })
         .catch(err => {
@@ -577,6 +575,7 @@ async function submitSelectedExpresses() {
 
     closeExpressModal();
 }
+
 
 
 
@@ -596,20 +595,19 @@ async function submitSelectedOrders() {
             item.customer
         );
 
-        // ✅ 构造扁平结构（GAS4 会根据 customer 映射 columns 自动排）
-       const payload = {
- 	 customer: item.customer || "",
-  	trackingNumber: item.trackingNumber || "",
-  	orderNumber: item.orderNumber || "",
-  	product: item.product || "",
-    quantity: item.quantity,
-    price: item.price,
-    foreignShipping: item.foreignShipping,
-    subtotal: subtotal,
-    total: total
-	  total: total
-};
-const payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
+        let payloadRaw = {
+            customer: item.customer || "",
+            trackingNumber: item.trackingNumber || "",
+            orderNumber: item.orderNumber || "",
+            product: item.product || "",
+            quantity: item.quantity,
+            price: item.price,
+            foreignShipping: item.foreignShipping,
+            subtotal: subtotal,
+            total: total
+        };
+
+        let payload = omitZeroFields(payloadRaw); // ✅ 自动过滤 0 值字段
 
         try {
             const res = await fetch(ORDER_URL, {
@@ -630,11 +628,9 @@ const payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
         }
     }
 
-    // ✅ 清理本地缓存
     list = list.filter(item => !successOrderNumbers.includes(String(item.orderNumber).trim()));
     localStorage.setItem("orderCache", JSON.stringify(list));
 
-    // ✅ 原始草稿删除逻辑保留
     if (successOrderNumbers.length > 0) {
         console.log("📝 正在删除订单草稿:", successOrderNumbers);
         fetch(ORDER_WORKER_URL, {
@@ -648,7 +644,6 @@ const payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
         })
         .then(res => res.json())
         .then(r => {
-            console.log("✅ 订单草稿删除返回:", r);
             alert(`✅ 成功提交并删除 ${successOrderNumbers.length} 条订单 ✅`);
         })
         .catch(err => {
@@ -661,6 +656,7 @@ const payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
 
     closeOrderModal();
 }
+
 
 // ⬆️ 上传快递草稿 (允许空值)
 function uploadCachedExpress() {
