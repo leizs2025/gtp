@@ -500,6 +500,17 @@ function emptyIfZero(value) {
     return (value === 0 || value === "0") ? "" : value;
 }
 
+function omitZeroFields(obj) {
+    const result = {};
+    for (const key in obj) {
+        const val = obj[key];
+        if (val !== 0 && val !== "0" && val !== "") {
+            result[key] = val;
+        }
+    }
+    return result;
+}
+  
 async function submitSelectedExpresses() {
     const selected = [...document.querySelectorAll("input[name='expressIndex']:checked")]
         .map(el => parseInt(el.value));
@@ -523,9 +534,9 @@ async function submitSelectedExpresses() {
             trackingNumber: item.trackingNumber || "",
             company: item.company || "",
             product: item.product || "",
-            total: emptyIfZero(total)
+            total: total
         };
-
+        const payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
         try {
             const res = await fetch(EXPRESS_URL, {
                 method: "POST",
