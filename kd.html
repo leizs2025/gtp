@@ -321,8 +321,8 @@ function calculateTotal(quantity, price, fee, customer) {
     const subtotal = quantity * price + fee;
     const markupMap = {
         "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-        "龙": 0.00, "惠": 0.01, "姐": 0.01, "阿妹": 0.01,
-        "自己": 0.00, "阿新": 0.00, "闺蜜": 0.15
+        "龙": 0.00, "惠": 0.015, "姐": 0.015, "阿妹": 0.015,
+        "自己": 0.19, "阿新": 0.00, "闺蜜": 0.15
     };
     const markupRate = markupMap[customer] || 0;
     const total = (subtotal / 1.6) * (1 + markupRate);
