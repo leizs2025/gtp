@@ -498,7 +498,7 @@ function deleteExpressCache(index) {
 }
   
 function emptyIfZero(value) {
-    return (value === 0 || value === "0") ? "" : value;
+    return (value === 0 || value === "0") ? null : value;
 }
 
 function omitZeroFields(obj) {
