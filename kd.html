@@ -537,7 +537,7 @@ async function submitSelectedExpresses() {
             total: emptyIfZero(total)
         };
 
-        let payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
+        let payload = emptyIfZero(payloadRaw); // ✅ 过滤 0 值字段
 
         try {
             const res = await fetch(EXPRESS_URL, {
