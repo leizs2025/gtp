@@ -534,7 +534,7 @@ async function submitSelectedExpresses() {
             trackingNumber: item.trackingNumber || "",
             company: item.company || "",
             product: item.product || "",
-            total: total
+            total: emptyIfZero(total)
         };
 
         let payload = omitZeroFields(payloadRaw); // ✅ 过滤 0 值字段
