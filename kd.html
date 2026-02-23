@@ -292,7 +292,7 @@ function calculateTotal(quantity, price, fee, customer) {
     const markupRate = MARKUP_MAP[customer] || 0;
 
     // **优化公式:** 总计 = (小计 / 1.65) * (1 + 加价率)
-    const total = (subtotal / 1.65) * (1 + markupRate);
+    const total = (subtotal / 1.72) * (1 + markupRate);
     
     // ✅ 格式化两位小数
     return {
@@ -328,7 +328,7 @@ function calculateTotal(quantity, price, fee, customer) {
         "自己": 0.19, "阿新": 0.00, "闺蜜": 0.15
     };
     const markupRate = markupMap[customer] || 0;
-    const total = (subtotal / 1.65) * (1 + markupRate);
+    const total = (subtotal / 1.72) * (1 + markupRate);
     return { subtotal: subtotal.toFixed(2), total: total.toFixed(2) };
 }
 
