@@ -346,7 +346,7 @@ function cacheExpress() {
 function calculateTotal(quantity, price, fee, customer) {
     const subtotal = (quantity * price) + fee;
     const markupRate = MARKUP_MAP[customer] || 0;
-    const total = (subtotal / 1.65) * (1 + markupRate);
+    const total = (subtotal / 1.72) * (1 + markupRate);
     return {
         subtotal: subtotal.toFixed(2),
         total: total.toFixed(2)
@@ -809,6 +809,7 @@ function closeExpressModal() {
 
 </body>
 </html>
+
 
 
 
