@@ -342,16 +342,6 @@ function cacheExpress() {
     
 }
 
-// 计算小计和总计函数
-function calculateTotal(quantity, price, fee, customer) {
-    const subtotal = (quantity * price) + fee;
-    const markupRate = MARKUP_MAP[customer] || 0;
-    const total = (subtotal / 1.72) * (1 + markupRate);
-    return {
-        subtotal: subtotal.toFixed(2),
-        total: total.toFixed(2)
-    };
-}
 
 // 编辑订单缓存
 function editOrderCache(index) {
@@ -809,6 +799,7 @@ function closeExpressModal() {
 
 </body>
 </html>
+
 
 
 
