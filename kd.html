@@ -140,6 +140,7 @@
           <option value="p">p</option>
           <option value="lok">lok</option>
           <option value="谢华">谢华</option>
+          <option value="空">空</option>
         </select>
       </div>
     </div>
@@ -268,9 +269,9 @@ function clearForm() {
 
 // 💰 客户加价率 (全局定义)
 const MARKUP_MAP = {
-    "咪雪": 0.10, "Annie": 0.19, "HKS": 0.16, "JFL": 0.19,
-    "龙": 0.00, "惠": 0.15, "姐": 0.015, "阿妹": 0.015,
-    "自己": 0.19, "阿新": 0.00, "闺蜜": 0.15, "谢华": 0.15, "lok": 0.015,
+    "咪雪": 0.10, "Annie": 0.17, "HKS": 0.16, "JFL": 0.19,
+    "龙": 0.00, "惠": 0.015, "姐": 0.015, "阿妹": 0.015,
+    "自己": 0.15, "阿新": 0.00, "闺蜜": 0.15, "谢华": 0.15, "lok": 0.015, "空": 0.15,
 };
 
 // 实时计算小计和总计
@@ -292,7 +293,7 @@ function calculateTotal(quantity, price, fee, customer) {
     const subtotal = (quantity * price) + fee;
     const markupRate = MARKUP_MAP[customer] || 0;
 
-    // **优化公式:** 总计 = (小计 / 1.65) * (1 + 加价率)
+    // **优化公式:** 总计 = (小计 / 1.72) * (1 + 加价率)
     const total = (subtotal / 1.72) * (1 + markupRate);
     
     // ✅ 格式化两位小数
