@@ -296,7 +296,7 @@ function calculateTotal(quantity, price, fee, customer) {
     const markupRate = MARKUP_MAP[customer] || 0;
 
     // **优化公式:** 总计 = (小计 / 1.72) * (1 + 加价率)
-    const total = (subtotal / 1.72) * (1 + markupRate);
+    const total = (subtotal / 1.68) * (1 + markupRate);
     
     // ✅ 格式化两位小数
     return {
