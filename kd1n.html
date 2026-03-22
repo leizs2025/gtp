@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>快递查询与提交系统</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0 auto;
+      max-width: 860px;
+      padding: 30px 20px;
+      background-color: #ffffff;
+      color: #333;
+    }
+    h1 { font-size: 1.8rem; margin-bottom: 2rem; text-align: center; }
+    .section-title { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 1rem; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+    .input-group { margin-bottom: 1.2rem; }
+    .input-label { font-weight: 500; display: block; margin-bottom: 6px; }
+    input, select {
+      width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc;
+      border-radius: 4px; box-sizing: border-box;
+    }
+    button {
+      padding: 10px 16px; font-size: 1rem; color: #fff;
+      background-color: #007acc; border: none; border-radius: 4px; cursor: pointer;
+    }
+    button:hover { background-color: #005fa3; }
+    .data-line { font-size: 0.95rem; margin: 6px 0; }
+    .data-label { font-weight: 600; margin-right: 10px; color: #555; }
+    #previewList div {
+      display: flex; justify-content: space-between;
+      padding: 6px 0; border-bottom: 1px solid #eee;
+    }
+    .del-btn { background: none; color: red; border: none; font-size: 18px; cursor: pointer; }
+    .status-bar {
+      padding: 10px; font-weight: bold; border-left: 4px solid;
+      margin: 16px 0;
+    }
+    .success { background: #e0f8e9; color: #2c7a3f; border-color: #2c7a3f; }
+    .error { background: #fdecea; color: #c0392b; border-color: #c0392b; }
+    #ticketPreview {
+      margin-top: 15px; padding: 12px; border: 1px dashed #bbb;
+      background: #fafafa; font-size: 15px; line-height: 1.6;
+      white-space: pre-wrap; display: none;
+    }
+    .ticket-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    .ticket-table td { padding: 4px 0; vertical-align: top; }
+    .ticket-header { font-weight: bold; text-align: center; margin-bottom: 10px; }
+    .ticket-summary { text-align: right; font-weight: bold; margin-top: 10px; }
+    .button-group {
+      display: flex; justify-content: center;
+      flex-wrap: wrap; gap: 10px; margin: 10px 0;
+    }
+    .inline-input {
+      display: flex; gap: 10px;
+    }
+    .inline-input input, .inline-input select {
+      flex: 1;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<h1>快递查询与提交系统</h1>
+
+<div class="input-label">快递单号</div>
+<div class="inline-input">
+  <input type="text" id="trackingNumber" placeholder="输入快递单号或后5位">
+  <button onclick="queryData()">🔍 </button>
+  <button onclick="startScan()">📷 </button>
+</div>
+
+<video id="scannerPreview" style="width:100%; max-height:300px; display:none; border:1px solid #ccc; margin-top:10px;" playsinline></video>
+
+<div class="data-line"><span class="data-label">快递公司:</span> <span id="companyData">-</span></div>
+<div class="data-line"><span class="data-label">货物名称:</span> <span id="productData">-</span></div>
+<div class="data-line"><span class="data-label">客户名称:</span> <span id="customerData">-</span></div>
+<div class="data-line"><span class="data-label">已知运费:</span> <span id="knownPrice">-</span></div>
+
+<div class="input-group">
+  <label class="input-label">运费金额</label>
+  <input type="number" id="enteredPrice" placeholder="输入运费金额">
+</div>
+
+<div class="button-group">
+  <button onclick="addToCache()">➕ 加入缓存</button>
+  <button onclick="loadCache()">📂 加载缓存</button>
+  <button onclick="submitAll()">📝 提交记录</button>
+  <button onclick="clearCache()" style="background:#e74c3c">🗑️ 清空缓存</button>
+</div>
+
+<div id="statusBar" class="status-bar" style="display:none;"></div>
+
+<div class="section-title">📋 已缓存记录</div>
+<div id="previewList"></div>
+
+<div class="section-title">🧾 筛选客户</div>
+<div class="inline-input">
+  <select id="ticketSelector" onchange="renderTicket()"><option value="">请选择客户</option></select>
+  <button onclick="downloadTicketAsImage()">📸 小票截图</button>
+</div>
+<div id="ticketPreview"></div>
+
+<script>
+  const API_URL = "https://wandering-moon-bdc2.jeenty.workers.dev/gas1";
+  let allRecords = [];
+  let pendingSubmissions = [], lastFetched = {}, matchedTrackingNumber = "";
+  
+  function loadCache() {
+    fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "all" })
+    })
+    .then(res => res.json())
+    .then(data => {
+      allRecords = data;
+      showStatus("✅ 缓存加载成功，共 " + allRecords.length + " 条记录", "success");
+    })
+    .catch(() => showStatus("缓存加载失败", "error"));
+  }
+  
+  function queryData() {
+    const input = document.getElementById("trackingNumber").value.trim();
+    if (!input) return alert("请输入快递单号");
+    if (allRecords.length === 0) return showStatus("请先加载缓存", "error");
+  
+    let match = allRecords.find(item => item.trackingNumber === input);
+    if (!match && input.length === 5) {
+      match = allRecords.find(item => item.trackingNumber?.slice(-5) === input);
+    }
+    if (match) {
+      lastFetched = match;
+      matchedTrackingNumber = match.trackingNumber;
+      updateDisplay(match);
+    } else {
+      showStatus("未在缓存中找到该快递单号", "error");
+    }
+  }
+  
+  function updateDisplay(data) {
+    document.getElementById("companyData").textContent = data.company || "-";
+    document.getElementById("productData").textContent = data.product || "-";
+    document.getElementById("customerData").textContent = data.customer || "-";
+    document.getElementById("knownPrice").textContent = data.price || "-";
+    showStatus("✅ 查询成功", "success");
+  }
+  
+ function loadPendingSubmissions() {
+    const cachedData = localStorage.getItem("pendingSubmissions");
+    if (cachedData) {
+        try {
+            pendingSubmissions = JSON.parse(cachedData);
+            renderPreview();
+            showStatus(`✅ 恢复 ${pendingSubmissions.length} 条缓存记录`, "success");
+        } catch (e) {
+            console.error("⚠️ 缓存恢复失败:", e);
+            showStatus("⚠️ 缓存恢复失败", "error");
+            localStorage.removeItem("pendingSubmissions");
+        }
+    }
+}
+
+function savePendingSubmissions() {
+    try {
+        localStorage.setItem("pendingSubmissions", JSON.stringify(pendingSubmissions));
+        console.log("✅ 缓存已保存");
+    } catch (e) {
+        console.error("⚠️ 缓存保存失败:", e);
+    }
+}
+
+function addToCache() {
+    const price = document.getElementById("enteredPrice").value.trim();
+    const number = matchedTrackingNumber || document.getElementById("trackingNumber").value.trim();
+
+    // ✅ 确保已查询到客户信息
+    if (!number || !price || !lastFetched.company) {
+        showStatus("⚠️ 请先查询快递单号，并填写运费金额", "error");
+        return;
+    }
+
+    // ✅ 防止重复添加
+    const alreadyExists = pendingSubmissions.some(item => item.trackingNumber === number);
+    if (alreadyExists) {
+        showStatus("⚠️ 该快递单号已存在于缓存中", "error");
+        return;
+    }
+
+    // ✅ 添加到缓存
+    pendingSubmissions.push({
+        trackingNumber: number,
+        company: lastFetched.company,
+        customer: lastFetched.customer,
+        product: lastFetched.product,
+        enteredPrice: price
+    });
+
+    // ✅ 保存到 localStorage
+    savePendingSubmissions();
+
+    // ✅ 清空表单
+    clearForm();
+    renderPreview();
+    showStatus("✅ 已成功加入缓存", "success");
+}
+
+// ✅ 页面加载时恢复缓存
+window.onload = loadPendingSubmissions;
+
+  
+  function renderPreview() {
+    const box = document.getElementById("previewList");
+    box.innerHTML = "";
+    pendingSubmissions.forEach((item, i) => {
+      const line = document.createElement("div");
+      line.innerHTML = `<div>${item.trackingNumber} - ${item.customer} - ${parseFloat(item.enteredPrice).toFixed(2)}</div><button class='del-btn' onclick='removeItem(${i})'>×</button>`;
+      box.appendChild(line);
+    });
+  
+    updateCustomerDropdown();
+  
+    const sel = document.getElementById("ticketSelector");
+    const selectedCustomer = sel.value;
+    const stillExists = pendingSubmissions.some(r => r.customer === selectedCustomer);
+    if (!stillExists) sel.value = "";
+  
+    renderTicket();
+  }
+  
+  function updateCustomerDropdown() {
+    const uniqueNames = [...new Set(pendingSubmissions.map(r => r.customer))];
+    const sel = document.getElementById("ticketSelector");
+    sel.innerHTML = '<option value="">请选择客户</option>';
+    uniqueNames.forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+  }
+  
+  function removeItem(i) {
+    pendingSubmissions.splice(i, 1);
+    savePendingSubmissions();   // ← 同步 localStorage
+    renderPreview();
+  }
+  
+  function clearCache() {
+    pendingSubmissions = [];
+    renderPreview();
+    clearForm();
+    document.getElementById("ticketSelector").value = "";
+    renderTicket();
+    document.getElementById("ticketPreview").innerHTML = "";
+    showStatus("缓存与表单清除成功", "success");
+  }
+  
+  function clearForm() {
+    document.getElementById("trackingNumber").value = "";
+    document.getElementById("enteredPrice").value = "";
+    document.getElementById("companyData").textContent = "-";
+    document.getElementById("productData").textContent = "-";
+    document.getElementById("customerData").textContent = "-";
+    document.getElementById("knownPrice").textContent = "-";
+    matchedTrackingNumber = "";
+    lastFetched = {};
+  }
+  
+ function submitAll() {
+    if (pendingSubmissions.length === 0) {
+        showStatus("⚠️ 缓存为空", "error");
+        return;
+    }
+
+    fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "submitBatch", list: pendingSubmissions })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.message) {
+            // ✅ 提交成功后清除缓存
+            pendingSubmissions = [];
+            localStorage.removeItem("pendingSubmissions");
+            
+            // ✅ 刷新显示
+            renderPreview();
+            clearForm();
+            document.getElementById("ticketSelector").value = "";
+            renderTicket();
+
+            showStatus(res.message, "success");
+        } else {
+            showStatus("提交失败", "error");
+        }
+    })
+    .catch(() => showStatus("提交异常", "error"));
+}
+
+  
+  function renderTicket() {
+    const name = document.getElementById("ticketSelector").value;
+    const area = document.getElementById("ticketPreview");
+    const filtered = pendingSubmissions.filter(r => r.customer === name);
+  
+    if (!name || filtered.length === 0) {
+      area.innerHTML = "";
+      area.style.display = "none";
+      return;
+    }
+  
+    area.style.display = "block";
+    let total = 0;
+    const date = new Date().toLocaleDateString();
+  
+    let rowsHtml = "";
+    filtered.forEach((r, i) => {
+      const price = parseFloat(r.enteredPrice).toFixed(2);
+      total += parseFloat(price);
+      rowsHtml += `<tr>
+        <td style='width:5%'>${i + 1}.</td>
+        <td style='width:55%'>${r.trackingNumber}</td>
+        <td style='width:20%;text-align:left;'>${r.company}</td>
+        <td style='width:20%;text-align:right;'>${price}</td>
+      </tr>
+      <tr>
+        <td></td><td colspan='3'>${r.product}</td>
+      </tr>`;
+    });
+  
+    const contentHeight = 400;
+    const rowHeight = 50;
+    const requiredRows = Math.floor((contentHeight - 120) / rowHeight);
+    const emptyRows = Math.max(0, requiredRows - filtered.length);
+  
+    let fillerRows = "";
+    for (let i = 0; i < emptyRows; i++) {
+      fillerRows += `<tr><td colspan='4'>&nbsp;</td></tr>`;
+    }
+  
+    let html = `<div class='ticket-header'>体积费 & 包裹号<br>日期：${date}<br>客户：${name}</div><br><table class='ticket-table'>`;
+    html += rowsHtml + fillerRows;
+    html += `<tr><td colspan='4'><hr></td></tr>
+             <tr><td colspan='4' class='ticket-summary'>合计：${filtered.length} 单，${total.toFixed(2)}</td></tr>`;
+    html += `</table>`;
+    area.innerHTML = html;
+  }
+  
+  function downloadTicketAsImage() {
+    const target = document.getElementById("ticketPreview");
+    html2canvas(target).then(canvas => {
+      const link = document.createElement("a");
+      link.download = "ticket.jpg";
+      link.href = canvas.toDataURL("image/jpeg");
+      link.click();
+    });
+  }
+  
+  function showStatus(msg, type = "success") {
+    const bar = document.getElementById("statusBar");
+    bar.textContent = msg;
+    bar.className = "status-bar " + type;
+    bar.style.display = "block";
+  }
+  </script>
+
+<script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
+<script>
+  let codeReader = null;
+  let currentStream = null;
+  let isScanning = false; // 防止重复触发
+  let lastScannedResult = ""; // 记录上一次成功扫描的结果
+  let lastScanTime = 0; // 记录上一次扫描的时间
+  const SCAN_COOLDOWN = 1500; // 冷却时间：1.5秒内不允许扫相同的码（防止重复提交）
+  
+  const videoElement = document.getElementById("scannerPreview");
+
+  function getReader() {
+    if (!codeReader) {
+      codeReader = new ZXing.BrowserMultiFormatReader();
+    }
+    return codeReader;
+  }
+
+  function stopCameraStream() {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+    videoElement.style.display = "none";
+    videoElement.srcObject = null;
+    isScanning = false; // 重置扫描状态
+  }
+
+  videoElement.addEventListener("click", () => {
+    const reader = getReader();
+    reader.reset();
+    stopCameraStream();
+  });
+
+  window.startScan = function () {
+    if (isScanning) {
+      console.log("正在扫描中，请勿重复点击");
+      return;
+    }
+
+    const reader = getReader();
+    
+    // 1. 彻底清理旧状态
+    reader.reset();
+    stopCameraStream();
+    
+    // 清空上一次的结果，强制要求扫新码
+    lastScannedResult = ""; 
+
+    videoElement.style.display = "block";
+    isScanning = true;
+
+    reader.listVideoInputDevices()
+      .then((devices) => {
+        if (devices.length === 0) {
+          showStatus("未检测到摄像头", "error");
+          stopCameraStream();
+          return;
+        }
+
+        let selected = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
+
+        // 2. 开始解码
+        reader.decodeFromVideoDevice(selected.deviceId, videoElement, (result, err) => {
+          if (result) {
+            const text = result.getText().trim();
+            const now = Date.now();
+
+            // --- 核心修复逻辑开始 ---
+            
+            // 过滤空结果
+            if (!text) return;
+
+            // 防抖：如果距离上次成功扫描不到 1.5 秒，且内容相同，直接忽略
+            // 这能有效防止“卡住”在同一个号码上
+            if (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN) {
+              return; 
+            }
+
+            // 更新状态
+            lastScannedResult = text;
+            lastScanTime = now;
+
+            // 立即停止摄像头，防止连续触发
+            isScanning = false; // 允许下一次点击
+            reader.reset(); 
+            stopCameraStream();
+
+            // 填充数据
+            document.getElementById("trackingNumber").value = text;
+            
+            // 给用户一个视觉反馈，表明扫到了新号码
+            showStatus(`✅ 识别成功: ${text}`, "success");
+            
+            // 执行查询
+            queryData();
+            
+            // --- 核心修复逻辑结束 ---
+          }
+          // 忽略 err (NotFoundException 是正常等待过程)
+        }).catch(err => {
+          console.error("扫码启动失败:", err);
+          isScanning = false;
+          stopCameraStream();
+          if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
+             showStatus("摄像头权限被拒绝或未找到设备", "error");
+          } else {
+             showStatus("扫码异常: " + err.message, "error");
+          }
+        });
+      })
+      .catch((err) => {
+        console.error("获取设备列表失败:", err);
+        isScanning = false;
+        stopCameraStream();
+        showStatus("初始化失败: " + err.message, "error");
+      });
+  };
+</script>
+
+</body>
+</html>
