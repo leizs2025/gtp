@@ -489,7 +489,12 @@ function deleteExpressCache(index) {
 }
   
 function emptyIfZero(value) {
-    return (value === 0 || value === "0") ? null : value;
+    // 增加 parseFloat(value) == 0 的判断，以处理 "0.00" 这种情况
+    // 同时保留原有的 null 处理
+    if (value === 0 || value === "0" || parseFloat(value) == 0) {
+        return null; 
+    }
+    return value;
 }
 
 function omitZeroFields(obj) {
@@ -519,16 +524,15 @@ async function submitSelectedExpresses() {
             item.customer
         );
 
-        let payloadRaw = {
-            customer: item.customer || "",
-            orderNumber: item.orderNumber || "",
-            trackingNumber: item.trackingNumber || "",
-            company: item.company || "",
-            product: item.product || "",
-            total: emptyIfZero(total)
-        };
-
-        let payload = emptyIfZero(payloadRaw); // ✅ 过滤 0 值字段
+  // ✅ 推荐写法：直接定义 payload 并立即清洗
+let payload = emptyIfZero({
+    customer: item.customer || "",
+    orderNumber: item.orderNumber || "",
+    trackingNumber: item.trackingNumber || "",
+    company: item.company || "",
+    product: item.product || "",
+    total: total // 此时 total 已经包含在内，会被下面的函数处理
+});
 
         try {
             const res = await fetch(EXPRESS_URL, {
