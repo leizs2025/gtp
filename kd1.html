@@ -370,40 +370,55 @@ window.onload = loadPendingSubmissions;
 
 <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
 <script>
-  const codeReader = new ZXing.BrowserMultiFormatReader();
-  const videoElement = document.getElementById("scannerPreview");
-  videoElement.addEventListener("click", () => {
+const codeReader = new ZXing.BrowserMultiFormatReader();
+const videoElement = document.getElementById("scannerPreview");
+videoElement.addEventListener("click", () => {
   codeReader.reset();
   videoElement.style.display = "none";
 });
 
-  window.startScan = function () {
-    videoElement.style.display = "block";
-    codeReader
-      .listVideoInputDevices()
-      .then((devices) => {
-        if (devices.length === 0) {
-          showStatus("未检测到摄像头", "error");
-          return;
-        }
+window.startScan = function () {
+  videoElement.style.display = "block";
+  codeReader
+    .listVideoInputDevices()
+    .then((devices) => {
+      if (devices.length === 0) {
+        showStatus("未检测到摄像头", "error");
+        return;
+      }
 
-        // 🔍 优先选择后置摄像头
-        let selected = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
+      // 尝试通过 facingMode 选择后置摄像头（首选方法）
+      // 如果失败则通过设备标签查找
+      const environmentCamera = devices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('world') ||
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('后置')
+      );
 
-        codeReader.decodeFromVideoDevice(selected.deviceId, videoElement, (result, err) => {
+      // 优先使用后置摄像头，如果找不到则使用第一个可用的
+      const selectedDevice = environmentCamera ? environmentCamera.deviceId : undefined;
+
+      codeReader.decodeFromVideoDevice(
+        selectedDevice, 
+        videoElement, 
+        (result, err) => {
           if (result) {
             codeReader.reset();
             videoElement.style.display = "none";
             document.getElementById("trackingNumber").value = result.getText();
             queryData();
           }
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-        showStatus("扫码初始化失败", "error");
-      });
-  };
+        },
+        // 添加约束条件以尝试强制使用后置摄像头
+        selectedDevice ? {} : { video: { facingMode: 'environment' }}
+      );
+    })
+    .catch((err) => {
+      console.error(err);
+      showStatus("扫码初始化失败", "error");
+    });
+};
 </script>
 
 
