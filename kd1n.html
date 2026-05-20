@@ -470,97 +470,158 @@
 <!-- 扫码相关脚本 -->
 <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
 <script>
-  let codeReader = null;
-  let currentStream = null;
-  let isScanning = false;
-  let lastScannedResult = "";
-  let lastScanTime = 0;
-  const SCAN_COOLDOWN = 1500; 
-  
-  const videoElement = document.getElementById("scannerPreview");
+let codeReader = null;
+let currentStream = null;
+let isScanning = false;
+let lastScannedResult = "";
+let lastScanTime = 0;
+const SCAN_COOLDOWN = 1500; 
 
-  function getReader() {
-    if (!codeReader) {
-      codeReader = new ZXing.BrowserMultiFormatReader();
-    }
-    return codeReader;
+const videoElement = document.getElementById("scannerPreview");
+
+function getReader() {
+  if (!codeReader) {
+    codeReader = new ZXing.BrowserMultiFormatReader();
   }
+  return codeReader;
+}
 
-  function stopCameraStream() {
-    if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop());
-      currentStream = null;
-    }
-    videoElement.style.display = "none";
-    videoElement.srcObject = null;
-    isScanning = false;
+function stopCameraStream() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+    currentStream = null;
   }
+  videoElement.style.display = "none";
+  videoElement.srcObject = null;
+  isScanning = false;
+}
 
-  videoElement.addEventListener("click", () => {
-    const reader = getReader();
-    reader.reset();
-    stopCameraStream();
-  });
+videoElement.addEventListener("click", () => {
+  const reader = getReader();
+  reader.reset();
+  stopCameraStream();
+});
 
-  window.startScan = function () {
-    if (isScanning) return;
+window.startScan = function () {
+  if (isScanning) return;
 
-    const reader = getReader();
-    reader.reset();
-    stopCameraStream();
-    lastScannedResult = ""; 
+  const reader = getReader();
+  reader.reset();
+  stopCameraStream();
+  lastScannedResult = ""; 
 
-    videoElement.style.display = "block";
-    isScanning = true;
+  videoElement.style.display = "block";
+  isScanning = true;
 
-    reader.listVideoInputDevices()
-      .then((devices) => {
-        if (devices.length === 0) {
-          showStatus("未检测到摄像头", "error");
-          stopCameraStream();
-          return;
-        }
-
-        let selected = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
-
-        reader.decodeFromVideoDevice(selected.deviceId, videoElement, (result, err) => {
-          if (result) {
-            const text = result.getText().trim();
-            const now = Date.now();
-
-            if (!text) return;
-
-            if (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN) {
-              return; 
-            }
-
-            lastScannedResult = text;
-            lastScanTime = now;
-
-            isScanning = false;
-            reader.reset(); 
-            stopCameraStream();
-
-            document.getElementById("trackingNumber").value = text;
-            showStatus(`✅ 识别成功: ${text}`, "success");
-            queryData();
-          }
-        }).catch(err => {
-          console.error("扫码启动失败:", err);
-          isScanning = false;
-          stopCameraStream();
-          if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
-             showStatus("摄像头权限被拒绝或未找到设备", "error");
-          }
-        });
-      })
-      .catch((err) => {
-        console.error("获取设备列表失败:", err);
-        isScanning = false;
-        stopCameraStream();
-        showStatus("初始化失败: " + err.message, "error");
-      });
+  // 首先尝试使用 constraints 直接指定后置摄像头
+  const constraints = {
+    video: { 
+      facingMode: 'environment' // 使用后置摄像头
+    }
   };
+
+  reader.decodeFromConstraints(constraints, videoElement, (result, err) => {
+    if (result) {
+      const text = result.getText().trim();
+      const now = Date.now();
+
+      if (!text) return;
+
+      if (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN) {
+        return; 
+      }
+
+      lastScannedResult = text;
+      lastScanTime = now;
+
+      isScanning = false;
+      reader.reset(); 
+      stopCameraStream();
+
+      document.getElementById("trackingNumber").value = text;
+      showStatus(`✅ 识别成功: ${text}`, "success");
+      queryData();
+    }
+  }).catch(fallbackToDeviceInfo); // 如果环境模式失败，再尝试按设备信息查找
+};
+
+function fallbackToDeviceInfo() {
+  const reader = getReader();
+  reader.listVideoInputDevices()
+    .then((devices) => {
+      if (devices.length === 0) {
+        showStatus("未检测到摄像头", "error");
+        stopCameraStream();
+        return;
+      }
+
+      // 更全面的后置摄像头检测逻辑
+      let selectedDeviceId = null;
+      
+      // 首先尝试通过标签查找后置摄像头
+      const backCamera = devices.find(d => 
+        d.label.toLowerCase().includes("back") || 
+        d.label.toLowerCase().includes("world") ||
+        d.label.toLowerCase().includes("rear") ||
+        d.label.toLowerCase().includes("后置")
+      );
+      
+      if (backCamera) {
+        selectedDeviceId = backCamera.deviceId;
+      } else {
+        // 如果没有找到标记为后置的摄像头，尝试使用其他方法
+        // 在某些iOS设备上，可以通过设备ID的特征来判断
+        for (const device of devices) {
+          // iOS设备上后置摄像头通常具有某些特征
+          if (device.deviceId.includes("back") || device.deviceId.includes("world")) {
+            selectedDeviceId = device.deviceId;
+            break;
+          }
+        }
+        
+        // 如果还是找不到，使用第一个设备作为备选
+        if (!selectedDeviceId && devices.length > 0) {
+          selectedDeviceId = devices[0].deviceId;
+        }
+      }
+
+      if (!selectedDeviceId) {
+        showStatus("未找到合适的摄像头", "error");
+        stopCameraStream();
+        return;
+      }
+
+      reader.decodeFromVideoDevice(selectedDeviceId, videoElement, (result, err) => {
+        if (result) {
+          const text = result.getText().trim();
+          const now = Date.now();
+
+          if (!text) return;
+
+          if (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN) {
+            return; 
+          }
+
+          lastScannedResult = text;
+          lastScanTime = now;
+
+          isScanning = false;
+          reader.reset(); 
+          stopCameraStream();
+
+          document.getElementById("trackingNumber").value = text;
+          showStatus(`✅ 识别成功: ${text}`, "success");
+          queryData();
+        }
+      });
+    })
+    .catch((err) => {
+      console.error("获取设备列表失败:", err);
+      isScanning = false;
+      stopCameraStream();
+      showStatus("初始化失败: " + err.message, "error");
+    });
+}
 </script>
 </body>
 </html>
