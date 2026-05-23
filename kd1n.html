@@ -471,94 +471,90 @@
 <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
 <script>
 let codeReader = null;
-let isScanning = false; // 是否正在扫描画面
-let isProcessing = false; // 是否正在处理结果（核心新增的锁）
+let isScanning = false; 
 let lastScannedResult = "";
 let lastScanTime = 0;
-const SCAN_COOLDOWN = 2000; // 建议延长到2秒，防止手抖连扫
+const SCAN_COOLDOWN = 2000; 
 
 const videoElement = document.getElementById("scannerPreview");
 
+// 🔥 核心修改1：引入 ZXing.DecodeHintType 和 BrowserBarcodeReader
 function getReader() {
   if (!codeReader) {
-    codeReader = new ZXing.BrowserMultiFormatReader();
+    // 准备提示参数，限制只识别 Code 128 格式的条形码（绝大多数快递单都是这个格式）
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.CODE_128]);
+    
+    // 使用专门的一维码阅读器，并传入限制条件
+    codeReader = new ZXing.BrowserBarcodeReader(hints);
   }
   return codeReader;
 }
 
-// 统一清理函数：彻底释放摄像头资源
-function stopCameraStream() {
-  const reader = getReader();
-  reader.reset(); // ZXing 官方推荐的释放方式
+function destroyScanner() {
+  if (codeReader) {
+    codeReader.reset(); 
+  }
+  if (videoElement.srcObject) {
+    const tracks = videoElement.srcObject.getTracks();
+    tracks.forEach(track => track.stop()); 
+  }
+  videoElement.srcObject = null;
   videoElement.style.display = "none";
-  videoElement.srcObject = null; // 强制清空视频源
   isScanning = false;
-  // 注意：这里不重置 isProcessing，由业务逻辑控制何时解锁
 }
 
 videoElement.addEventListener("click", () => {
-  stopCameraStream();
+  destroyScanner();
 });
 
 window.startScan = function () {
-  // 如果正在扫描或正在处理上一次的结果，直接返回，拒绝任何新请求
-  if (isScanning || isProcessing) return;
+  if (isScanning) return;
 
-  const reader = getReader();
-  reader.reset(); // 启动前先重置，清除上一轮的缓存
+  // 每次启动前重置，防止状态残留
+  if (codeReader) {
+    codeReader.reset();
+    codeReader = null;
+  }
   
-  videoElement.style.display = "block";
+  const reader = getReader();
   isScanning = true;
 
-  // 优先使用 constraints 强制指定后置摄像头（解决你之前提到的前后摄切换问题）
+  // 🔥 核心修改2：强制指定后置摄像头 ('environment')
   const constraints = {
     video: { facingMode: 'environment' }
   };
 
   reader.decodeFromConstraints(constraints, videoElement, (result, err) => {
-    // 1. 基础错误过滤（没找到二维码属于正常情况，直接忽略）
-    if (err && !(err instanceof ZXing.NotFoundException)) {
-      console.error(err);
-    }
-
-    // 2. 核心防重逻辑
     if (result) {
+      // 拿到结果立刻销毁，物理隔绝连扫
+      destroyScanner(); 
+
       const text = result.getText().trim();
       const now = Date.now();
 
-      // 只要满足以下任意一个条件，就立刻拦截：
-      // - 正在处理上一个结果
-      // - 内容为空
-      // - 内容与上次相同且在冷却时间内
-      if (isProcessing || !text || (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN)) {
+      if (!text) return;
+
+      // 防抖校验，防止短时间内重复录入
+      if (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN) {
         return; 
       }
 
-      // 3. 命中有效结果！立刻上锁，阻止后续所有连扫
-      isProcessing = true; 
       lastScannedResult = text;
       lastScanTime = now;
 
-      // 4. 立刻停止摄像头和解码器，物理隔绝连扫
-      stopCameraStream();
-
-      // 5. 执行业务逻辑
       document.getElementById("trackingNumber").value = text;
       showStatus(`✅ 识别成功: ${text}`, "success");
-      
       queryData(); 
-
-      // 6. 【关键】业务处理完毕后，记得手动解锁，否则下次无法扫描
-      // 如果你的 queryData 是异步的，建议放在 queryData 的 .then() 里执行下面这行
-      setTimeout(() => {
-        isProcessing = false;
-      }, 500); 
+    }
+    
+    // 忽略没找到条码时的正常报错
+    if (err && !(err instanceof ZXing.NotFoundException)) {
+      console.error("扫码异常:", err);
     }
   }).catch(err => {
-    console.error("扫码启动失败:", err);
-    isScanning = false;
-    isProcessing = false; // 异常时也要记得解锁
-    stopCameraStream();
+    console.error("扫码初始化失败:", err);
+    destroyScanner();
     if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
        showStatus("摄像头权限被拒绝或未找到设备", "error");
     }
