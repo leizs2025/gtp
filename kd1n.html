@@ -470,96 +470,97 @@
 <!-- 扫码相关脚本 -->
 <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
 <script>
-let codeReader = null;
-let isScanning = false; 
-let lastScannedResult = "";
-let lastScanTime = 0;
-const SCAN_COOLDOWN = 2000; 
-
-const videoElement = document.getElementById("scannerPreview");
-
-// 🔥 核心修改1：引入 ZXing.DecodeHintType 和 BrowserBarcodeReader
-function getReader() {
-  if (!codeReader) {
-    // 准备提示参数，限制只识别 Code 128 格式的条形码（绝大多数快递单都是这个格式）
-    const hints = new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.CODE_128]);
-    
-    // 使用专门的一维码阅读器，并传入限制条件
-    codeReader = new ZXing.BrowserBarcodeReader(hints);
-  }
-  return codeReader;
-}
-
-function destroyScanner() {
-  if (codeReader) {
-    codeReader.reset(); 
-  }
-  if (videoElement.srcObject) {
-    const tracks = videoElement.srcObject.getTracks();
-    tracks.forEach(track => track.stop()); 
-  }
-  videoElement.srcObject = null;
-  videoElement.style.display = "none";
-  isScanning = false;
-}
-
-videoElement.addEventListener("click", () => {
-  destroyScanner();
-});
-
-window.startScan = function () {
-  if (isScanning) return;
-
-  // 每次启动前重置，防止状态残留
-  if (codeReader) {
-    codeReader.reset();
-    codeReader = null;
-  }
+  let codeReader = null;
+  let currentStream = null;
+  let isScanning = false;
+  let lastScannedResult = "";
+  let lastScanTime = 0;
+  const SCAN_COOLDOWN = 1500; 
   
-  const reader = getReader();
-  isScanning = true;
+  const videoElement = document.getElementById("scannerPreview");
 
-  // 🔥 核心修改2：强制指定后置摄像头 ('environment')
-  const constraints = {
-    video: { facingMode: 'environment' }
-  };
-
-  reader.decodeFromConstraints(constraints, videoElement, (result, err) => {
-    if (result) {
-      // 拿到结果立刻销毁，物理隔绝连扫
-      destroyScanner(); 
-
-      const text = result.getText().trim();
-      const now = Date.now();
-
-      if (!text) return;
-
-      // 防抖校验，防止短时间内重复录入
-      if (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN) {
-        return; 
-      }
-
-      lastScannedResult = text;
-      lastScanTime = now;
-
-      document.getElementById("trackingNumber").value = text;
-      showStatus(`✅ 识别成功: ${text}`, "success");
-      queryData(); 
+  function getReader() {
+    if (!codeReader) {
+      codeReader = new ZXing.BrowserMultiFormatReader();
     }
-    
-    // 忽略没找到条码时的正常报错
-    if (err && !(err instanceof ZXing.NotFoundException)) {
-      console.error("扫码异常:", err);
+    return codeReader;
+  }
+
+  function stopCameraStream() {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
     }
-  }).catch(err => {
-    console.error("扫码初始化失败:", err);
-    destroyScanner();
-    if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
-       showStatus("摄像头权限被拒绝或未找到设备", "error");
-    }
+    videoElement.style.display = "none";
+    videoElement.srcObject = null;
+    isScanning = false;
+  }
+
+  videoElement.addEventListener("click", () => {
+    const reader = getReader();
+    reader.reset();
+    stopCameraStream();
   });
-};
+
+  window.startScan = function () {
+    if (isScanning) return;
+
+    const reader = getReader();
+    reader.reset();
+    stopCameraStream();
+    lastScannedResult = ""; 
+
+    videoElement.style.display = "block";
+    isScanning = true;
+
+    reader.listVideoInputDevices()
+      .then((devices) => {
+        if (devices.length === 0) {
+          showStatus("未检测到摄像头", "error");
+          stopCameraStream();
+          return;
+        }
+
+        let selected = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
+
+        reader.decodeFromVideoDevice(selected.deviceId, videoElement, (result, err) => {
+          if (result) {
+            const text = result.getText().trim();
+            const now = Date.now();
+
+            if (!text) return;
+
+            if (text === lastScannedResult && (now - lastScanTime) < SCAN_COOLDOWN) {
+              return; 
+            }
+
+            lastScannedResult = text;
+            lastScanTime = now;
+
+            isScanning = false;
+            reader.reset(); 
+            stopCameraStream();
+
+            document.getElementById("trackingNumber").value = text;
+            showStatus(`✅ 识别成功: ${text}`, "success");
+            queryData();
+          }
+        }).catch(err => {
+          console.error("扫码启动失败:", err);
+          isScanning = false;
+          stopCameraStream();
+          if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
+             showStatus("摄像头权限被拒绝或未找到设备", "error");
+          }
+        });
+      })
+      .catch((err) => {
+        console.error("获取设备列表失败:", err);
+        isScanning = false;
+        stopCameraStream();
+        showStatus("初始化失败: " + err.message, "error");
+      });
+  };
 </script>
 </body>
 </html>
